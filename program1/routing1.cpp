@@ -8,22 +8,27 @@
 #include <map>
 #include <bitset>
 #include <stack>
-#include <random>
+#include <queue>
+#include "Rand.h"
 //#include <bits/stdc++.h>
 using namespace std;
 typedef long long int lli;
 #define urept(soeji, start, n) for (int soeji = start; soeji < n; soeji++)
 #define drept(soeji, start, n) for (int soeji = start; soeji > n; soeji--)
 
-const int N = 3; // number of nodes observer
+const int N = 5; // number of nodes (observer)
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;
 double threshold = 0.6; // threshold
+const int numberofpackets = 10;
 struct Edge
 {
     int to;
-    double tsuccess_rate = constant_suc_rate;
+    double tsuccess_rate;
+    Edge(int t, double rate) : to(t), tsuccess_rate(rate){};
 };
+using Graph = vector<vector<Edge>>;
+
 struct Node
 {
     //alpha...number of packets successfully received
@@ -33,7 +38,9 @@ struct Node
     double x, y;
     uint32_t alpha;
     uint32_t beta;
-
+    bool sendmap[numberofpackets];
+    bool recvmap[numberofpackets];
+    queue<int> q;
     int state;
     /*0(emptyset)
     1(trustee)
@@ -41,7 +48,6 @@ struct Node
     3(uncertain)*/
     double dtv;
     double itv;
-    Edge e[N];
 };
 
 struct ONode
@@ -101,7 +107,7 @@ void xtothree(int x)
     }
 }
 //乱数
-uint32_t get_rand_range(int seed, uint32_t min_val, uint32_t max_val)
+/*uint32_t get_rand_range(int seed, uint32_t min_val, uint32_t max_val)
 {
     // 乱数生成器
     static std::mt19937 mt32(seed);
@@ -111,7 +117,7 @@ uint32_t get_rand_range(int seed, uint32_t min_val, uint32_t max_val)
 
     // 乱数を生成
     return get_rand_uni_int(mt32);
-}
+}*/
 
 double ds_trust(ONode x)
 {
@@ -188,14 +194,29 @@ void set_dtv()
 {
 }
 
-void broadcast()
+void broadcast(const Graph &gr, Node n[], int node_num, int p)
 {
+    //ブロードキャスト操作
+    //edgeのあるノードにブロードキャストする
+    //edgeのあるノードのrecvmapをリンクの確率でtrueにする
+    //recvmapがtrueなら対象のパケットをqueueに入れる
+    for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
+    {
+        if (rnd.randBool(num_edge.tsuccess_rate))
+        {
+            n[num_edge.to].recvmap[p] = true;
+            n[num_edge.to].q.push(p);
+        }
+        cout << num_edge.to << " ";
+    }
+    cout << endl;
 }
 
 //Input:設定したパラメータ
 //Output:値を関数に渡す？
 void simulate()
 {
+    //broadcast(g, n[0], x, p);
 }
 
 void simulate_end()
@@ -204,19 +225,87 @@ void simulate_end()
 
 int main(void)
 {
-    int inputseed;
-    cout << "input seed: ";
+    //int inputseed;
+    //cout << "input seed: ";
     //ノードの位置を入力(あとで？)
     //ひとまずは考えない（手動でノードを接続）
-    Node A;
-    edge_set(A);
+    //接続情報を入力
+    Graph g(N);
+    int numberofedges = 8;
+    //for (int i = 0; i < numberofedges; i++)
+    //{
+    //}
+
+    Node node[5];
+    //ノード番号，通信成功率の組
+    g[0].push_back(Edge(1, 0.8));
+    g[0].push_back(Edge(2, 0.8));
+    g[0].push_back(Edge(3, 0.8));
+    g[1].push_back(Edge(2, 0.8));
+    g[1].push_back(Edge(4, 0.8));
+    g[2].push_back(Edge(3, 0.8));
+    g[2].push_back(Edge(4, 0.8));
+    g[3].push_back(Edge(4, 0.8));
+
     //攻撃ノードの情報を追加
     //パケットはuID指定
-    int numberofpackets = 100;
-    //経路情報はvectorで管理
-    vector<int> route;
-    //シミュレーションを行う関数を定義
+    int packet[numberofpackets];
+    for (int i = 0; i < numberofpackets; i++)
+    {
+        packet[i] = i + 1;
+    }
 
+    for (int i = 0; i < numberofpackets; i++)
+    {
+        broadcast(g, node, 0, i);
+    }
+    for (int i = 0; i < numberofpackets; i++)
+    {
+        broadcast(g, node, 1, i);
+    }
+    for (int i = 0; i < numberofpackets; i++)
+    {
+        if (node[1].recvmap[i])
+        {
+            cout << "true ";
+        }
+        else
+        {
+            cout << "false ";
+        }
+        if (node[2].recvmap[i])
+        {
+            cout << "true ";
+        }
+        else
+        {
+            cout << "false ";
+        }
+        if (node[3].recvmap[i])
+        {
+            cout << "true ";
+        }
+        else
+        {
+            cout << "false ";
+        }
+        if (node[4].recvmap[i])
+        {
+            cout << "true ";
+        }
+        else
+        {
+            cout << "false ";
+        }
+        cout << endl;
+    }
+    //経路情報はvectorで管理
+    vector<vector<int>>
+        route;
+    //シミュレーションを行う
+    simulate();
+    //終了処理
+    simulate_end();
     //結果はcsv等に保存？
     string result = "xxx.csv";
     return 0;
