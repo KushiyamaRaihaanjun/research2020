@@ -194,22 +194,73 @@ void set_dtv()
 {
 }
 
+//node_num:送信元
+//num_edge.to:宛先
 void broadcast(const Graph &gr, Node n[], int node_num, int p)
 {
     //ブロードキャスト操作
     //edgeのあるノードにブロードキャストする
     //edgeのあるノードのrecvmapをリンクの確率でtrueにする
     //recvmapがtrueなら対象のパケットをqueueに入れる
-    for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
+    if (node_num == 0) //送信元
     {
-        if (rnd.randBool(num_edge.tsuccess_rate))
+        for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
         {
-            n[num_edge.to].recvmap[p] = true;
-            n[num_edge.to].q.push(p);
+            if (rnd.randBool(num_edge.tsuccess_rate))
+            {
+                n[node_num].sendmap[p] = true;
+                n[num_edge.to].recvmap[p] = true; //toのrecvmapを更新
+                n[num_edge.to].q.push(p);         //toのキューにパケットをプッシュ
+                cout << "Node " << num_edge.to << " received packet " << p << " from Node " << node_num << endl;
+            }
+            else //失敗処理
+            {
+                n[node_num].sendmap[p] |= false;   //orにする
+                n[num_edge.to].recvmap[p] = false; //
+                cout << "Node " << num_edge.to << " dropped packet " << p << " ((from  Node " << node_num << endl;
+            }
+            //cout << num_edge.to << " ";
         }
-        cout << num_edge.to << " ";
     }
-    cout << endl;
+    else
+    {
+        for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
+        {
+            while (!n[node_num].q.empty())
+            {
+                if (rnd.randBool(num_edge.tsuccess_rate))
+                {
+                    n[node_num].sendmap[n[node_num].q.front()] = true;    //送信マップをtrue
+                    n[num_edge.to].recvmap[n[node_num].q.front()] = true; //キューの先頭をtrue
+                    n[num_edge.to].q.push(n[node_num].q.front());
+                    cout << "Node " << num_edge.to << " received packet " << n[node_num].q.front() << " from Node " << node_num << endl;
+                    n[node_num].q.pop();
+                }
+                else
+                {
+                    n[node_num].sendmap[n[node_num].q.front()] = false;     //送信マップをfalse
+                    n[num_edge.to].recvmap[n[node_num].q.front()] |= false; //キューの先頭をfalse
+                    cout << "Node " << num_edge.to << " dropped packet " << n[node_num].q.front() << " ((from Node " << node_num << endl;
+                    n[node_num].q.pop();
+                }
+            }
+            /*if (n[node_num].recvmap[p] == true && rnd.randBool(num_edge.tsuccess_rate)) //受信に成功している条件を加える
+            {
+                n[node_num].sendmap[p] = true; //送信マップをtrue
+                n[node_num].q.pop();
+                n[num_edge.to].recvmap[p] = true;
+                n[num_edge.to].q.push(p);
+            }
+            else
+            {
+                n[node_num].sendmap[p] = false;
+                n[node_num].q.pop();
+            }*/
+
+            //cout << num_edge.to << " ";
+        }
+    }
+    //cout << endl;
 }
 
 //Input:設定したパラメータ
@@ -255,16 +306,41 @@ int main(void)
         packet[i] = i + 1;
     }
 
+    //for (int i = 0; i < N - 1; i++)
+    //{
+    //    for (int j = 0; j < numberofpackets; j++)
+    //    {
+    //        broadcast(g, node, i, j);
+    //    }
+    //}
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < numberofpackets; j++)
+        {
+            node[i].sendmap[j] = false;
+            node[i].sendmap[j] = false;
+        }
+    }
     for (int i = 0; i < numberofpackets; i++)
     {
         broadcast(g, node, 0, i);
     }
-    for (int i = 0; i < numberofpackets; i++)
+    for (int i = 1; i <= 3; i++)
     {
-        broadcast(g, node, 1, i);
+        broadcast(g, node, i, 0);
     }
+    cout << "Node0 Node1 Node2 Node3 Node4" << endl;
     for (int i = 0; i < numberofpackets; i++)
     {
+        cout << i << " ";
+        if (node[0].sendmap[i])
+        {
+            cout << "true ";
+        }
+        else
+        {
+            cout << "false ";
+        }
         if (node[1].recvmap[i])
         {
             cout << "true ";
