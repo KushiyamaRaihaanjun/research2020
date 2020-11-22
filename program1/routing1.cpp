@@ -196,7 +196,7 @@ void set_dtv()
 
 //node_num:送信元
 //num_edge.to:宛先
-void broadcast(const Graph &gr, Node n[], int node_num, int p)
+void broadcastFromSource(const Graph &gr, Node n[], int node_num, int p)
 {
     //ブロードキャスト操作
     //edgeのあるノードにブロードキャストする
@@ -224,43 +224,40 @@ void broadcast(const Graph &gr, Node n[], int node_num, int p)
     }
     else
     {
-        for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
+        return;
+    }
+}
+
+void broadcastFromIntermediateNode(const Graph &gr, Node n[], int node_num)
+{
+    for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
+    {
+        queue<int> tmp = n[node_num].q; //キューの中身をいったん退避(ブロードキャストのため)
+        while (!n[node_num].q.empty())
         {
-            while (!n[node_num].q.empty())
+            //パケットの重複判定をする
+            if (rnd.randBool(num_edge.tsuccess_rate))
             {
-                if (rnd.randBool(num_edge.tsuccess_rate))
-                {
-                    n[node_num].sendmap[n[node_num].q.front()] = true;    //送信マップをtrue
-                    n[num_edge.to].recvmap[n[node_num].q.front()] = true; //キューの先頭をtrue
-                    n[num_edge.to].q.push(n[node_num].q.front());
-                    cout << "Node " << num_edge.to << " received packet " << n[node_num].q.front() << " from Node " << node_num << endl;
-                    n[node_num].q.pop();
-                }
-                else
-                {
-                    n[node_num].sendmap[n[node_num].q.front()] = false;     //送信マップをfalse
-                    n[num_edge.to].recvmap[n[node_num].q.front()] |= false; //キューの先頭をfalse
-                    cout << "Node " << num_edge.to << " dropped packet " << n[node_num].q.front() << " ((from Node " << node_num << endl;
-                    n[node_num].q.pop();
-                }
-            }
-            /*if (n[node_num].recvmap[p] == true && rnd.randBool(num_edge.tsuccess_rate)) //受信に成功している条件を加える
-            {
-                n[node_num].sendmap[p] = true; //送信マップをtrue
+                n[node_num].sendmap[n[node_num].q.front()] = true;    //送信マップをtrue
+                n[num_edge.to].recvmap[n[node_num].q.front()] = true; //キューの先頭をtrue
+                n[num_edge.to].q.push(n[node_num].q.front());
+                cout << "Node " << num_edge.to << " received packet " << n[node_num].q.front() << " from Node " << node_num << endl;
                 n[node_num].q.pop();
-                n[num_edge.to].recvmap[p] = true;
-                n[num_edge.to].q.push(p);
+                //エッジを調べる
+                //成功を...に通知
             }
             else
             {
-                n[node_num].sendmap[p] = false;
+                n[node_num].sendmap[n[node_num].q.front()] = false;     //送信マップをfalse
+                n[num_edge.to].recvmap[n[node_num].q.front()] |= false; //キューの先頭をfalse
+                cout << "Node " << num_edge.to << " dropped packet " << n[node_num].q.front() << " ((from Node " << node_num << endl;
                 n[node_num].q.pop();
-            }*/
-
-            //cout << num_edge.to << " ";
+                //エッジを調べる
+                //失敗を...に通知
+            }
         }
+        n[node_num].q = tmp; //退避していたキューの中身をもとに戻す
     }
-    //cout << endl;
 }
 
 //Input:設定したパラメータ
@@ -318,16 +315,16 @@ int main(void)
         for (int j = 0; j < numberofpackets; j++)
         {
             node[i].sendmap[j] = false;
-            node[i].sendmap[j] = false;
+            node[i].recvmap[j] = false;
         }
     }
     for (int i = 0; i < numberofpackets; i++)
     {
-        broadcast(g, node, 0, i);
+        broadcastFromSource(g, node, 0, i);
     }
     for (int i = 1; i <= 3; i++)
     {
-        broadcast(g, node, i, 0);
+        broadcastFromIntermediateNode(g, node, i);
     }
     cout << "Node0 Node1 Node2 Node3 Node4" << endl;
     for (int i = 0; i < numberofpackets; i++)
@@ -379,10 +376,10 @@ int main(void)
     vector<vector<int>>
         route;
     //シミュレーションを行う
-    simulate();
+    //simulate();
     //終了処理
-    simulate_end();
+    //simulate_end();
     //結果はcsv等に保存？
-    string result = "xxx.csv";
+    //string result = "xxx.csv";
     return 0;
 }
