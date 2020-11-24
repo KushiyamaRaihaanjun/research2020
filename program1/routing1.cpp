@@ -16,14 +16,16 @@ typedef long long int lli;
 #define urept(soeji, start, n) for (int soeji = start; soeji < n; soeji++)
 #define drept(soeji, start, n) for (int soeji = start; soeji > n; soeji--)
 
+#define INF 1e30
 const int N = 5; // number of nodes (observer)
 const int d = N - 1;
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;
 double threshold = 0.6; // trust value threshold
 const int numberofpackets = 10;
-double tmpetx = 0.0;
+double tmpetx = 0.0;//etx計算用
 vector<bool> seen; // 到達可能かどうかを調べる
+vector<double> cs;//宛先までのetxを求めるための配列
 struct Edge
 {
     int to;
@@ -31,7 +33,7 @@ struct Edge
     Edge(int t, double rate) : to(t), tsuccess_rate(rate){};
 };
 using Graph = vector<vector<Edge>>;
-
+using P = pair<double,int>;
 struct Node
 {
     //alpha...number of packets successfully received
@@ -210,13 +212,35 @@ void dfs(const Graph &gr, int ver)
         dfs(gr, next_ver.to);
     }
 }
+//ダイクストラ法
+void dijkstra_etx(const Graph &gr, int s, vector<double> &dis) {
+    dis.resize(N, INF);
+    priority_queue<P, vector<P>, greater<P>> pq;  // 「仮の最短距離, 頂点」が小さい順に並ぶ
+    dis[s] = 0;
+    pq.emplace(dis[s], s);
+    while (!pq.empty()) {
+        P p = pq.top();
+        pq.pop();
+        int v = p.second;
+        if (dis[v] < p.first) {  // 最短距離で無ければ無視
+            continue;
+        }
+        //to do: 計算誤差を考える
+        for (auto &e : gr[v]) {
+            if (dis[e.to] > dis[v] + (1.0/e.tsuccess_rate)) {  // 最短距離候補なら priority_queue に追加
+                dis[e.to] = dis[v] + (1.0/e.tsuccess_rate);
+                pq.emplace(dis[e.to], e.to);
+            }
+        }
+    }
+}
 
 double dfs_etx(const Graph &gr, int ver, double etx)
 {
-    if (ver == d)
+    /*if (ver == d)
     {
-        return tmp;
-    }
+        return tmpetx;
+    }*/
     seen[ver] = true;
     for (auto next_ver : gr[ver])
     {
@@ -224,9 +248,10 @@ double dfs_etx(const Graph &gr, int ver, double etx)
         {
             continue;
         }
-        tmp += (1.0 / (next_ver.tsuccess_rate));
-        dfs_etx(gr, next_ver.to, tmp);
+        tmpetx += (1.0 / (next_ver.tsuccess_rate));
+        dfs_etx(gr, next_ver.to, tmpetx);
     }
+    return tmpetx;
 }
 
 //node_num:送信元
@@ -242,7 +267,7 @@ void broadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst
     if (node_num == 0) //送信元
     {
         //優先度決定を関数化(後で)
-        priority_queue<int> p_queue;
+        priority_queue<int> pq_onehop_fromsource;
         //ここでedgeに対するfor
         for (auto num_edge : gr[node_num])
         {
@@ -253,17 +278,21 @@ void broadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst
             dfs(gr, num_edge.to);
             if (seen[dst] == true) //到達可能の場合
             {
+                seen.assign(N, false);//seenを一回リセット
                 //ETXを使って優先度キューに入れるようなことをしたい
-                double to_etx = dfs_etx(gr, num_edge.to, 0.0);
+                double to_etx = 0.0;
+                dijkstra_etx(gr,num_edge.to,cs);//num_edge.to から宛先までのetxを求めている
+                to_etx = (1.0/num_edge.tsuccess_rate)+cs[dst];//sourceから宛先へのetx
                 cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
-                //cout << "Node " << num_edge.to << " can reach dst" << endl;
+                
+                //tmpetx = 0.0;//消す
             }
             else
             {
                 //到達不可能
-                //cout << "Node " << num_edge.to << " cannot reach dst" << endl;
             }
-            seen.assign(N, false);
+            seen.assign(N,false);//seenをリセット
+            
         }
         //end for
 
@@ -296,7 +325,7 @@ void broadcastFromIntermediateNode(const Graph &gr, Node n[], int node_num)
 {
     //優先度をつける
     //宛先までのETXを計算する
-    //
+    //配列csからETXを取得する
     for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
     {
         queue<int> tmp = n[node_num].q; //キューの中身をいったん退避(ブロードキャストのため)
