@@ -23,9 +23,9 @@ const int d = N - 1;
 double constant_suc_rate = 0.8;
 double threshold = 0.6; // trust value threshold
 const int numberofpackets = 10;
-double tmpetx = 0.0;//etx計算用
-vector<bool> seen; // 到達可能かどうかを調べる
-vector<double> cs;//宛先までのetxを求めるための配列
+double tmpetx = 0.0; //etx計算用
+vector<bool> seen;   // 到達可能かどうかを調べる
+vector<double> cs;   //宛先までのetxを求めるための配列
 struct Edge
 {
     int to;
@@ -33,7 +33,9 @@ struct Edge
     Edge(int t, double rate) : to(t), tsuccess_rate(rate){};
 };
 using Graph = vector<vector<Edge>>;
-using P = pair<double,int>;
+using P = pair<double, int>;
+priority_queue<P, vector<P>, greater<P>> pq_onehop_fromsource;
+priority_queue<P, vector<P>, greater<P>> pq_intermediate[N];
 struct Node
 {
     //alpha...number of packets successfully received
@@ -213,45 +215,92 @@ void dfs(const Graph &gr, int ver)
     }
 }
 //ダイクストラ法
-void dijkstra_etx(const Graph &gr, int s, vector<double> &dis) {
+void dijkstra_etx(const Graph &gr, int s, vector<double> &dis)
+{
     dis.resize(N, INF);
-    priority_queue<P, vector<P>, greater<P>> pq;  // 「仮の最短距離, 頂点」が小さい順に並ぶ
+    priority_queue<P, vector<P>, greater<P>> pq; // 「仮の最短距離, 頂点」が小さい順に並ぶ
     dis[s] = 0;
     pq.emplace(dis[s], s);
-    while (!pq.empty()) {
+    while (!pq.empty())
+    {
         P p = pq.top();
         pq.pop();
         int v = p.second;
-        if (dis[v] < p.first) {  // 最短距離で無ければ無視
+        if (dis[v] < p.first)
+        { // 最短距離で無ければ無視
             continue;
         }
         //to do: 計算誤差を考える
-        for (auto &e : gr[v]) {
-            if (dis[e.to] > dis[v] + (1.0/e.tsuccess_rate)) {  // 最短距離候補なら priority_queue に追加
-                dis[e.to] = dis[v] + (1.0/e.tsuccess_rate);
+        for (auto &e : gr[v])
+        {
+            if (dis[e.to] > dis[v] + (1.0 / e.tsuccess_rate))
+            { // 最短距離候補なら priority_queue に追加
+                dis[e.to] = dis[v] + (1.0 / e.tsuccess_rate);
                 pq.emplace(dis[e.to], e.to);
             }
         }
     }
 }
 
-double dfs_etx(const Graph &gr, int ver, double etx)
+void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst)
 {
-    /*if (ver == d)
+    //優先度決定を関数化したい(後で)
+    //edgeに対するfor
+    for (auto num_edge : gr[node_num])
     {
-        return tmpetx;
-    }*/
-    seen[ver] = true;
-    for (auto next_ver : gr[ver])
-    {
-        if (seen[next_ver.to])
+        //すべてのnum_edge.toに対して宛先へ到達できるかをdfsを使って探索
+        //1/pを足し上げてETXを算出
+        //dst～num_edge.toまでのETXを計算する
+        //ここで深さ優先探索が使えそう
+        //パケットの数だけキューにETXの組をpushしそう
+        dfs(gr, num_edge.to);
+        if (seen[dst] == true) //到達可能の場合
         {
-            continue;
+            //ETXを使って優先度キューに入れるようなことをしたい
+            double to_etx = 0.0;
+            dijkstra_etx(gr, num_edge.to, cs);                 //num_edge.to から宛先までのetxを求めている
+            to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //sourceから宛先へのetx
+            cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
+            pq_onehop_fromsource.emplace(to_etx, num_edge.to);
         }
-        tmpetx += (1.0 / (next_ver.tsuccess_rate));
-        dfs_etx(gr, next_ver.to, tmpetx);
+        else
+        {
+            //到達不可能
+        }
+        seen.assign(N, false); //seenをリセット
     }
-    return tmpetx;
+    //end for
+}
+
+//to do: 計算結果を再利用したい
+void Decidepriorityintermediate(const Graph &gr, Node n[], int node_num, int dst)
+{
+    //優先度決定を関数化したい(後で)
+    //edgeに対するfor
+    for (auto num_edge : gr[node_num])
+    {
+        //すべてのnum_edge.toに対して宛先へ到達できるかをdfsを使って探索
+        //1/pを足し上げてETXを算出
+        //dst～num_edge.toまでのETXを計算する
+        //ここで深さ優先探索が使えそう
+        //パケットの数だけキューにETXの組をpushしそう
+        dfs(gr, num_edge.to);
+        if (seen[dst] == true) //到達可能の場合
+        {
+            //ETXを使って優先度キューに入れるようなことをしたい
+            double to_etx = 0.0;
+            dijkstra_etx(gr, num_edge.to, cs);                 //num_edge.to から宛先までのetxを求めている
+            to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //sourceから宛先へのetx
+            cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
+            pq_intermediate[node_num].emplace(to_etx, num_edge.to);
+        }
+        else
+        {
+            //到達不可能
+        }
+        seen.assign(N, false); //seenをリセット
+    }
+    //end for
 }
 
 //node_num:送信元
@@ -262,40 +311,10 @@ void broadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst
     //edgeのあるノードにブロードキャストする
     //edgeのあるノードのrecvmapをリンクの確率でtrueにする
     //recvmapがtrueなら対象のパケットをqueueに入れる
-    //送信元から1ホップの優先度付けをここで行う
+    //送信元から1ホップの優先度付けは別の関数で行った
     //低いETXのパスを選択するように1ホップノードの優先度を設定する
     if (node_num == 0) //送信元
     {
-        //優先度決定を関数化(後で)
-        priority_queue<int> pq_onehop_fromsource;
-        //ここでedgeに対するfor
-        for (auto num_edge : gr[node_num])
-        {
-            //すべてのnum_edge.toに対して宛先へ到達できるかをdfsを使って探索
-            //1/pを足し上げてETXを算出
-            //dst～num_edge.toまでのETXを計算する
-            //ここで深さ優先探索が使えそう
-            dfs(gr, num_edge.to);
-            if (seen[dst] == true) //到達可能の場合
-            {
-                seen.assign(N, false);//seenを一回リセット
-                //ETXを使って優先度キューに入れるようなことをしたい
-                double to_etx = 0.0;
-                dijkstra_etx(gr,num_edge.to,cs);//num_edge.to から宛先までのetxを求めている
-                to_etx = (1.0/num_edge.tsuccess_rate)+cs[dst];//sourceから宛先へのetx
-                cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
-                
-                //tmpetx = 0.0;//消す
-            }
-            else
-            {
-                //到達不可能
-            }
-            seen.assign(N,false);//seenをリセット
-            
-        }
-        //end for
-
         //ブロードキャスト
         for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
         {
@@ -323,52 +342,65 @@ void broadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst
 
 void broadcastFromIntermediateNode(const Graph &gr, Node n[], int node_num)
 {
-    //優先度をつける
+    //ノードの優先度付けは最初に行った
     //宛先までのETXを計算する
     //配列csからETXを取得する
-    for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
+    //priority_queueからノード番号を取得する
+    //node_num->pq_onehop_fromsource.top().second(キューから取得した番号)に変更すれば良い
+    //書き換える
+    //送信元から1hopとそうでない場合で分ける？
+    //if (送信元から1hop)
+    while (!pq_onehop_fromsource.empty())
     {
-        queue<int> tmp = n[node_num].q; //キューの中身をいったん退避(ブロードキャストのため)
-        while (!n[node_num].q.empty())
+        priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource; //優先度キューを退避？
+        tmp_pq_onehop_fromsource = pq_onehop_fromsource;
+        for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
         {
-            if (rnd.randBool(num_edge.tsuccess_rate))
+            queue<int> tmp = n[node_num].q; //キューの中身をいったん退避(ブロードキャストのため)
+
+            while (!n[node_num].q.empty())
             {
-                //パケットの重複判定をする
-                if (n[num_edge.to].recvmap[n[node_num].q.front()] == false) //まだキューの先頭のパケットを受信していない場合
+                if (rnd.randBool(num_edge.tsuccess_rate))
                 {
-                    n[node_num].sendmap[n[node_num].q.front()] = true;    //送信マップをtrue
-                    n[num_edge.to].recvmap[n[node_num].q.front()] = true; //受信マップをfalseならtrue
-                    //受信成功時のメッセージ
-                    cout << "Node " << num_edge.to << " received packet " << n[node_num].q.front() << " from Node " << node_num << endl;
-                    n[num_edge.to].q.push(n[node_num].q.front());
+                    //パケットの重複判定をする
+                    if (n[num_edge.to].recvmap[n[node_num].q.front()] == false) //まだキューの先頭のパケットを受信していない場合
+                    {
+                        n[node_num].sendmap[n[node_num].q.front()] = true;    //送信マップをtrue
+                        n[num_edge.to].recvmap[n[node_num].q.front()] = true; //受信マップをfalseならtrue
+                        //受信成功時のメッセージ
+                        cout << "Node " << num_edge.to << " received packet " << n[node_num].q.front() << " from Node " << node_num << endl;
+                        n[num_edge.to].q.push(n[node_num].q.front());
+                    }
+                    else
+                    {
+                        //重複時のメッセージ
+                        cout << "Ignoring packet " << n[node_num].q.front() << " due to duplicate" << endl;
+                    }
+                    n[node_num].q.pop();
+                    //to do
+                    //エッジを調べる
+                    //成功or重複をnode_numに通知
+
+                    //成功or重複をnode_numに通知
                 }
                 else
                 {
-                    //重複時のメッセージ
-                    cout << "Ignoring packet " << n[node_num].q.front() << " due to duplicate" << endl;
+                    n[node_num].sendmap[n[node_num].q.front()] = false;     //送信マップをfalse
+                    n[num_edge.to].recvmap[n[node_num].q.front()] |= false; //キューの先頭をfalse
+                    cout << "Node " << num_edge.to << " dropped packet " << n[node_num].q.front() << " ((from Node " << node_num << endl;
+                    n[node_num].q.pop();
+                    //to do
+                    //エッジを調べる
+                    //失敗をnode_numに通知
+
+                    //失敗を周辺ノードに通知
                 }
-                n[node_num].q.pop();
-                //to do
-                //エッジを調べる
-                //成功or重複をnode_numに通知
-
-                //成功or重複をnode_numに通知
             }
-            else
-            {
-                n[node_num].sendmap[n[node_num].q.front()] = false;     //送信マップをfalse
-                n[num_edge.to].recvmap[n[node_num].q.front()] |= false; //キューの先頭をfalse
-                cout << "Node " << num_edge.to << " dropped packet " << n[node_num].q.front() << " ((from Node " << node_num << endl;
-                n[node_num].q.pop();
-                //to do
-                //エッジを調べる
-                //失敗をnode_numに通知
-
-                //失敗を周辺ノードに通知
-            }
+            n[node_num].q = tmp; //退避していたキューの中身をもとに戻す
         }
-        n[node_num].q = tmp; //退避していたキューの中身をもとに戻す
+        pq_onehop_fromsource.pop();
     }
+    //else {}//(送信元から2hop以上)
 }
 
 //Input:設定したパラメータ
@@ -423,12 +455,14 @@ int main(void)
         }
     }
     seen.assign(N, false);
+    Decidepriorityfromsource(g, node, 0, d);
     for (int i = 0; i < numberofpackets; i++)
     {
         broadcastFromSource(g, node, 0, i, d);
     }
     for (int i = 1; i <= 3; i++)
     {
+        Decidepriorityintermediate(g, node, i, d);
         broadcastFromIntermediateNode(g, node, i);
     }
     cout << "Node0 Node1 Node2 Node3 Node4" << endl;
@@ -484,6 +518,7 @@ int main(void)
     //simulate();
     //終了処理
     //simulate_end();
+
     //結果はcsv等に保存？
     //string result = "xxx.csv";
     return 0;
