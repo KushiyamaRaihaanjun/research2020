@@ -273,7 +273,7 @@ void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst)
 }
 
 //to do: 計算結果を再利用したい
-void Decidepriorityintermediate(const Graph &gr, Node n[], int node_num, int dst)
+void DecidePriorityIntermediate(const Graph &gr, Node n[], int node_num, int dst)
 {
     //優先度決定を関数化したい(後で)
     //edgeに対するfor
@@ -305,7 +305,7 @@ void Decidepriorityintermediate(const Graph &gr, Node n[], int node_num, int dst
 
 //node_num:送信元
 //num_edge.to:宛先
-void broadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst)
+void BroadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst)
 {
     //ブロードキャスト操作
     //edgeのあるノードにブロードキャストする
@@ -340,7 +340,98 @@ void broadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst
     }
 }
 
-void broadcastFromIntermediateNode(const Graph &gr, Node n[], int node_num)
+//優先度が2番目以下からのノードの送信
+void SendFromlessPrior(Node n[], priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource, int node_num, Edge num_edge)
+{
+    while (tmp_pq_onehop_fromsource.top().second != node_num) //退避した優先度キューのインデックスを調べる
+    {
+        while (!n[node_num].q.empty())
+        {
+            if (rnd.randBool(num_edge.tsuccess_rate))
+            {
+                //パケットの重複判定をする
+                //自分より優先度が高いノードが送信していないという条件を加える
+                if (n[num_edge.to].recvmap[n[node_num].q.front()] == false && n[tmp_pq_onehop_fromsource.top().second].sendmap[n[node_num].q.front()] == false) //まだキューの先頭のパケットを受信していない場合
+                {
+                    n[node_num].sendmap[n[node_num].q.front()] = true;    //送信マップをtrue
+                    n[num_edge.to].recvmap[n[node_num].q.front()] = true; //受信マップをfalseならtrue
+                    //受信成功時のメッセージ
+                    cout << "Node " << num_edge.to << " received packet " << n[node_num].q.front() << " from Node " << node_num << endl;
+                    n[num_edge.to].q.push(n[node_num].q.front());
+                }
+                else
+                {
+                    //重複時のメッセージ
+                    cout << "Ignoring packet " << n[node_num].q.front() << " due to duplicate" << endl;
+                }
+                n[node_num].q.pop();
+                //to do
+                //エッジを調べる
+                //成功or重複をnode_numに通知
+
+                //成功or重複をnode_numに通知
+            }
+            else
+            {
+                n[node_num].sendmap[n[node_num].q.front()] = false;     //送信マップをfalse
+                n[num_edge.to].recvmap[n[node_num].q.front()] |= false; //受信マップをfalse
+                cout << "Node " << num_edge.to << " dropped packet " << n[node_num].q.front() << " ((from Node " << node_num << endl;
+                n[node_num].q.pop();
+                //to do
+                //エッジを調べる
+                //失敗をnode_numに通知
+
+                //失敗を周辺ノードに通知
+            }
+        }
+        tmp_pq_onehop_fromsource.pop();
+    }
+}
+
+//優先度が高いノードからの送信
+void SendFromHighestPrior(Node n[], int node_num, Edge num_edge)
+{
+    while (!n[node_num].q.empty())
+    {
+        if (rnd.randBool(num_edge.tsuccess_rate))
+        {
+            //パケットの重複判定をする
+            if (n[num_edge.to].recvmap[n[node_num].q.front()] == false) //まだキューの先頭のパケットを受信していない場合
+            {
+                n[node_num].sendmap[n[node_num].q.front()] = true;    //送信マップをtrue
+                n[num_edge.to].recvmap[n[node_num].q.front()] = true; //受信マップをfalseならtrue
+                //受信成功時のメッセージ
+                cout << "Node " << num_edge.to << " received packet " << n[node_num].q.front() << " from Node " << node_num << endl;
+                n[num_edge.to].q.push(n[node_num].q.front());
+            }
+            else
+            {
+                //重複時のメッセージ
+                cout << "Ignoring packet " << n[node_num].q.front() << " due to duplicate" << endl;
+            }
+            n[node_num].q.pop();
+            //to do
+            //エッジを調べる
+            //成功or重複をnode_numに通知
+
+            //成功or重複をnode_numに通知
+        }
+        else
+        {
+            n[node_num].sendmap[n[node_num].q.front()] = false;     //送信マップをfalse
+            n[num_edge.to].recvmap[n[node_num].q.front()] |= false; //受信マップをfalse
+            cout << "Node " << num_edge.to << " dropped packet " << n[node_num].q.front() << " ((from Node " << node_num << endl;
+            n[node_num].q.pop();
+            //to do
+            //エッジを調べる
+            //失敗をnode_numに通知
+
+            //失敗を周辺ノードに通知
+        } //end if
+    }     //end while
+}
+
+void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
 {
     //ノードの優先度付けは最初に行った
     //宛先までのETXを計算する
@@ -348,56 +439,34 @@ void broadcastFromIntermediateNode(const Graph &gr, Node n[], int node_num)
     //priority_queueからノード番号を取得する
     //node_num->pq_onehop_fromsource.top().second(キューから取得した番号)に変更すれば良い
     //書き換える
+
     //送信元から1hopとそうでない場合で分ける？
     //if (送信元から1hop)
     while (!pq_onehop_fromsource.empty())
     {
         priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource; //優先度キューを退避？
         tmp_pq_onehop_fromsource = pq_onehop_fromsource;
+        int node_num = pq_onehop_fromsource.top().second; //ノード番号(優先度順)
+        //優先度を表示
+        cout << "Node " << node_num << " priority " << pq_onehop_fromsource.size() << endl;
         for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
         {
-            queue<int> tmp = n[node_num].q; //キューの中身をいったん退避(ブロードキャストのため)
-
-            while (!n[node_num].q.empty())
+            //送信先のノードのETXを計算する
+            //priority_queueの配列から次の送信ノードを取得
+            //実際送信するところ
+            queue<int> tmp = n[node_num].q;                        //キューの中身をいったん退避(ブロードキャストのため)
+            if (tmp_pq_onehop_fromsource.top().second != node_num) //もっとも優先度の高いノードでない場合
             {
-                if (rnd.randBool(num_edge.tsuccess_rate))
-                {
-                    //パケットの重複判定をする
-                    if (n[num_edge.to].recvmap[n[node_num].q.front()] == false) //まだキューの先頭のパケットを受信していない場合
-                    {
-                        n[node_num].sendmap[n[node_num].q.front()] = true;    //送信マップをtrue
-                        n[num_edge.to].recvmap[n[node_num].q.front()] = true; //受信マップをfalseならtrue
-                        //受信成功時のメッセージ
-                        cout << "Node " << num_edge.to << " received packet " << n[node_num].q.front() << " from Node " << node_num << endl;
-                        n[num_edge.to].q.push(n[node_num].q.front());
-                    }
-                    else
-                    {
-                        //重複時のメッセージ
-                        cout << "Ignoring packet " << n[node_num].q.front() << " due to duplicate" << endl;
-                    }
-                    n[node_num].q.pop();
-                    //to do
-                    //エッジを調べる
-                    //成功or重複をnode_numに通知
-
-                    //成功or重複をnode_numに通知
-                }
-                else
-                {
-                    n[node_num].sendmap[n[node_num].q.front()] = false;     //送信マップをfalse
-                    n[num_edge.to].recvmap[n[node_num].q.front()] |= false; //キューの先頭をfalse
-                    cout << "Node " << num_edge.to << " dropped packet " << n[node_num].q.front() << " ((from Node " << node_num << endl;
-                    n[node_num].q.pop();
-                    //to do
-                    //エッジを調べる
-                    //失敗をnode_numに通知
-
-                    //失敗を周辺ノードに通知
-                }
+                //優先度がより低い場合
+                SendFromlessPrior(n, tmp_pq_onehop_fromsource, node_num, num_edge);
             }
+            else //最も優先度が高い場合
+            {
+                //優先度が高いノードから送信
+                SendFromHighestPrior(n, node_num, num_edge);
+            }                    //end if
             n[node_num].q = tmp; //退避していたキューの中身をもとに戻す
-        }
+        }                        //end for
         pq_onehop_fromsource.pop();
     }
     //else {}//(送信元から2hop以上)
@@ -410,7 +479,40 @@ void simulate()
     //broadcast(g, n[0], x, p);
 }
 
+void show_map(Node node[])
+{
+    cout << "Node0 Node1 Node2 Node3 Node4" << endl;
+    for (int i = 0; i < numberofpackets; i++)
+    {
+        cout << i << " ";
+        if (node[0].sendmap[i])
+        {
+            cout << "true ";
+        }
+        else
+        {
+            cout << "false ";
+        }
+        for (int j = 1; j < N; j++)
+        {
+            if (node[j].recvmap[i])
+            {
+                cout << "true ";
+            }
+            else
+            {
+                cout << "false ";
+            }
+        }
+        cout << endl;
+    }
+}
+
 void simulate_end()
+{
+}
+
+void BlackholeAttack()
 {
 }
 
@@ -422,7 +524,7 @@ int main(void)
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    int numberofedges = 8;
+    int number_of_edges = 8;
     //for (int i = 0; i < numberofedges; i++)
     //{
     //}
@@ -458,59 +560,14 @@ int main(void)
     Decidepriorityfromsource(g, node, 0, d);
     for (int i = 0; i < numberofpackets; i++)
     {
-        broadcastFromSource(g, node, 0, i, d);
+        BroadcastFromSource(g, node, 0, i, d);
     }
     for (int i = 1; i <= 3; i++)
     {
-        Decidepriorityintermediate(g, node, i, d);
-        broadcastFromIntermediateNode(g, node, i);
+        DecidePriorityIntermediate(g, node, i, d);
+        BroadcastFromIntermediatenode(g, node);
     }
-    cout << "Node0 Node1 Node2 Node3 Node4" << endl;
-    for (int i = 0; i < numberofpackets; i++)
-    {
-        cout << i << " ";
-        if (node[0].sendmap[i])
-        {
-            cout << "true ";
-        }
-        else
-        {
-            cout << "false ";
-        }
-        if (node[1].recvmap[i])
-        {
-            cout << "true ";
-        }
-        else
-        {
-            cout << "false ";
-        }
-        if (node[2].recvmap[i])
-        {
-            cout << "true ";
-        }
-        else
-        {
-            cout << "false ";
-        }
-        if (node[3].recvmap[i])
-        {
-            cout << "true ";
-        }
-        else
-        {
-            cout << "false ";
-        }
-        if (node[4].recvmap[i])
-        {
-            cout << "true ";
-        }
-        else
-        {
-            cout << "false ";
-        }
-        cout << endl;
-    }
+    show_map(node);
     //経路情報はvectorで管理
     vector<vector<int>>
         route;
