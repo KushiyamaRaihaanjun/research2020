@@ -22,7 +22,7 @@ const int d = N - 1;
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;
 double threshold = 0.6; // trust value threshold
-const int numberofpackets = 3;
+const int numberofpackets = 10;
 double tmpetx = 0.0;  //etx計算用
 vector<bool> seen;    // 到達可能かどうかを調べる
 vector<bool> checked; // 送信元から1hopノードが送信しているか
@@ -33,10 +33,11 @@ struct Edge
     double tsuccess_rate;
     Edge(int t, double rate) : to(t), tsuccess_rate(rate){};
 };
-using Graph = vector<vector<Edge>>;
-using P = pair<double, int>;
-priority_queue<P, vector<P>, greater<P>> pq_onehop_fromsource;
-priority_queue<P, vector<P>, greater<P>> pq_intermediate[N];
+using Graph = vector<vector<Edge>>; //グラフ型
+using P = pair<double, int>;        //ETX,ノード番号のペア
+
+priority_queue<P, vector<P>, greater<P>> pq_onehop_fromsource; //1hopノードの優先度付きキュー
+priority_queue<P, vector<P>, greater<P>> pq_intermediate[N];   //各ノードの優先度付きキュー
 struct Node
 {
     //alpha...number of packets successfully received
@@ -310,6 +311,7 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
     {
         if (bf_dist[i] == hop_num) //Hop数のノードについて
         {
+            cout << i << endl;
             for (auto num_edge : gr[i])
             {
                 //すべてのnum_edge.toに対して宛先へ到達できるかをdfsを使って探索
@@ -332,6 +334,7 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     //到達不可能
                 }
                 seen.assign(N, false); //seenをリセット
+                cs.assign(N, INF);     //csをリセット(ETXを求め直すため)
             }
         }
     }
@@ -537,7 +540,7 @@ void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
         cnt++;
     }
 
-    //何らかのメソッドをつくってノード4,5の番号を取得する
+    //幅優先探索でノードのホップ数を求めてノードの番号を取得する
     //(送信元から2hop以上)
 
     //優先度キューのループ
@@ -569,6 +572,7 @@ void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
     {
         for (int i = 1; i < d; i++)
         {
+            //まだ調べていないノードがある場合
             if (bf_dist[i] == now_hopnum && checked[i] == false)
             {
                 //int node_num = tmp_pq_onehop_fromsource.top().second; //ノード番号(優先度順)
@@ -645,7 +649,11 @@ void set_map(Node node[])
 //送受信マップの表示
 void show_map(Node node[])
 {
-    cout << "Node0 Node1 Node2 Node3 Node4" << endl;
+    for (int i = 0; i < N; i++)
+    {
+        cout << "Node" << i << " ";
+    }
+    cout << endl;
     for (int i = 0; i < numberofpackets; i++)
     {
         cout << i << " ";
@@ -707,7 +715,7 @@ void edge_set(Graph &gr)
     gr[2].push_back(Edge(5, 0.8));
     gr[3].push_back(Edge(4, 0.8));
     gr[3].push_back(Edge(5, 0.8));
-    gr[4].push_back(Edge(6, 0.8));
+    gr[4].push_back(Edge(6, 0.9));
     gr[5].push_back(Edge(6, 0.8));
     checked.resize(gr[0].size());
     //送信元から1hopをチェックしたかどうか
