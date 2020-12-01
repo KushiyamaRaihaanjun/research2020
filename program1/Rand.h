@@ -52,5 +52,17 @@ public:
         std::uniform_int_distribution<> uid(0, 1);
         return ((uid(mt)) ? true : false);
     }
+    //double型
+    double randDouble()
+    {
+        std::uniform_real_distribution<> uid(0.0, 1.0);
+        return uid(mt);
+    }
+    //double型(範囲指定)
+    double randDoubleRange(double x, double y)
+    {
+        std::uniform_real_distribution<> uid(x, y);
+        return uid(mt);
+    }
 };
 static thread_local Rand rnd;

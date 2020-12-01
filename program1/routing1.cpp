@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <vector>
 #include <numeric>
@@ -10,11 +11,8 @@
 #include <stack>
 #include <queue>
 #include "Rand.h"
-//#include <bits/stdc++.h>
 using namespace std;
 typedef long long int lli;
-#define urept(soeji, start, n) for (int soeji = start; soeji < n; soeji++)
-#define drept(soeji, start, n) for (int soeji = start; soeji > n; soeji--)
 
 #define INF 1e30
 const int N = 7; // number of nodes (observer)
@@ -111,19 +109,6 @@ void xtothree(int x)
         power3 *= 3;
     }
 }
-//乱数
-/*uint32_t get_rand_range(int seed, uint32_t min_val, uint32_t max_val)
-{
-    // 乱数生成器
-    static std::mt19937 mt32(seed);
-
-    // [min_val, max_val] の一様分布整数 (int) の分布生成器
-    std::uniform_int_distribution<uint32_t> get_rand_uni_int(min_val, max_val);
-
-    // 乱数を生成
-    return get_rand_uni_int(mt32);
-}*/
-
 double ds_trust(ONode x)
 {
     /*bitset か，bit 全探索*/
@@ -701,6 +686,23 @@ void BlackholeAttack(queue<int> que)
     }
 }
 
+void edge_set_from_file(Graph &gr)
+{
+    //ファイルから読み込む形に変更する
+    ifstream ifs("topology.txt", ios::in);
+    if (!ifs)
+    {
+        cerr << "Error: file not opened" << endl;
+        return;
+    }
+    int from, to;
+    double cost;
+    while (ifs >> from >> to >> cost)
+    {
+        gr[from].push_back(Edge(to, cost));
+    }
+    ifs.close();
+}
 void edge_set(Graph &gr)
 {
     //ノード番号，通信成功率の組
@@ -732,7 +734,8 @@ int main(void)
     //for (int i = 0; i < numberofedges; i++)
     //{
     //}
-    edge_set(g);
+    //edge_set(g);
+    edge_set_from_file(g);
     Node node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定

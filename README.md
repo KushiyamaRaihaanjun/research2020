@@ -68,11 +68,23 @@ ORの実装・信頼値測定についてのメモ
     - [ダイクストラ法による単一始点最短経路を求めるアルゴリズム](https://algo-logic.info/dijkstra/)
     - [お手軽 乱数実装【C++11】](https://qiita.com/Gaccho/items/dc312fb5a056505f0a9f)
     - [BFS (幅優先探索) 超入門！ 〜 キューを鮮やかに使いこなす 〜](https://qiita.com/drken/items/996d80bcae64649a6580)
+    - [C, C++でのファイル入力をまとめてみたよ](https://qiita.com/Reed_X1319RAY/items/098596cda78e9c1a6bad)
 - その他
-    - 
+    - [uniform_real_distribution]((https://cpprefjp.github.io/reference/random/uniform_real_distribution.html))
+    - [cpprefjp - C++日本語リファレンス](https://cpprefjp.github.io/)
+    - [グラフ理論(北海道大学)](https://ocw.hokudai.ac.jp/wp-content/uploads/2016/01/GraphTheory-2007-Note-all.pdf)
+    - [グラフ探索アルゴリズムとその応用](https://www.ioi-jp.org/camp/2011/hosaka-graph.pdf)
+        - 隣接リストなどについて
 ## その他事項・疑問・メモ
 - 攻撃ノードは通信成功率を0とするとETXが無限になってゼロ除算が発生する
     - 仮の値をセットする？
+- 乱数について
+    - 初期値はランダムに与えている
+    - 乱数はメルセンヌ・ツイスタを使用している
+    - パケットの送信成功、失敗はベルヌーイ分布に従う
+    - double型の乱数はuniform_real_distributionによって取得
+        - 指定された範囲の値が等確率で発生するよう離散分布
+    - [参考](https://cpprefjp.github.io/reference/random/uniform_real_distribution.html)
 - すべてパケットが到着するまで待つと，パケット配送率が100パーセントになる(当たり前)
 - 信頼値の更新
     - 100ごとにインターバルとかでも良いかも
