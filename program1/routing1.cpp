@@ -678,11 +678,11 @@ void simulate_end()
     //string result = "xxx.csv";
 }
 
-void BlackholeAttack(queue<int> que)
+void BlackholeAttack(Node node[], int node_num)
 {
-    while (!que.empty())
+    while (!node[node_num].q.empty())
     {
-        que.pop();
+        node[node_num].q.pop();
     }
 }
 

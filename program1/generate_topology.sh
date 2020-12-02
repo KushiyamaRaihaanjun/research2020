@@ -1,4 +1,5 @@
 #!/bin/bash
-g++ generate_topology.cpp -std=c++14 -I .
+g++ -o topology generate_topology.cpp -std=c++14 -I .
 echo "compiled"
-./a.out 7 11
+./topology 7 11
+echo "Done"
