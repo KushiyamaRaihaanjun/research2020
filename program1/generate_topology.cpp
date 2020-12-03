@@ -22,6 +22,8 @@ struct Edge
     Edge(int t, double rate) : to(t), tsuccess_rate(rate){};
 };
 using Graph = vector<vector<Edge>>;
+
+//深さ優先探索
 vector<bool> seen;
 void dfs(Graph &gr, int ver)
 {
@@ -35,6 +37,23 @@ void dfs(Graph &gr, int ver)
         dfs(gr, next_ver.to);
     }
 }
+
+//深さ優先探索その2
+/*bool dfs2(int state, int goal, Graph &gr)
+{
+    if (state == goal)
+    {
+        return true;
+    }
+    for (auto next : gr[state])
+    {
+        if (dfs2(next.to, goal, gr) == true)
+        {
+            return true;
+        };
+    }
+    return false;
+}*/
 
 //幅優先探索
 //Hop数をトポロジから事前計算
@@ -78,37 +97,48 @@ int main(int argc, char *argv[])
     Graph g(N);
     Graph g2(N);
     int dst = N - 1;
-    seen.assign(N, false);
     /*
+    方針1
     配列に N*(N-1)/2の数の組み合わせを代入し，シャッフルして
     最初のM個を取る
     dfsで接続性を計算して接続でなかったら最初に戻る
     */
-    //mt19937 engine(0);
-    //for (int i = 0; i < N; i++)
-    //{
-    //    for (int j = i + 1; j < N; j++)
-    //    {
-    //        double cost = rnd.randDoubleRange(0.5, 0.8);
-    //        g[i].push_back(Edge(j, cost));
-    //    }
-    //}
+    /*
+    方針2
+    送信元と宛先の条件から乱数を使って生成
+    */
     map<pair<int, int>, int> nodeval; //fromとtoのペアを保持
                                       // | ios::trunc);
     //ofstream out("topology.txt");
     while (1)
     {
         ofstream out("topology.txt");
-        for (int i = 0; i <= M; i++)
+        for (int i = 0; i < M; i++)
         {
             int from = rnd(N);
             int to = rnd(N);
             double rate = rnd.randDoubleRange(0.5, 0.8);
             if (from < to && nodeval[{from, to}] == 0 && !(from == 0 && to == dst))
             {
-                g2[from].push_back(Edge(to, rate));
-                out << from << " " << to << " " << rate << endl;
-                nodeval[{from, to}]++;
+                if (from == 0 && nodeval[{from, to}] == 0)
+                {
+                    g2[from].push_back(Edge(to, rate));
+                    out << from << " " << to << " " << rate << endl;
+                    nodeval[{from, to}]++;
+                }
+                else if (from > 0 && nodeval[{0, from}] == 0) //fromが送信元と接続がない場合
+                {
+                    g2[from].push_back(Edge(to, rate));
+                    out << from << " " << to << " " << rate << endl;
+                    nodeval[{from, to}]++;
+                }
+                else
+                {
+                    if (i >= 1)
+                    {
+                        i--;
+                    }
+                }
             }
             else
             {
@@ -118,48 +148,49 @@ int main(int argc, char *argv[])
                 }
             }
         }
-        //shuffle(g.begin(), g.end(), engine);        //shuffleする
-        //copy(g.begin(), g.begin() + M, g2.begin()); //g2(サイズMにコピー)
         //if (!g2.empty())
         //{
         dfs(g2, 0); //到達性チェック
-
         //}
-        if (nodeval.size() > 0)
-        {
-            nodeval.clear();
-        }
-        if (g2.size() > 0)
-        {
-            g2.clear();
-        }
+        nodeval.clear();
+        g2.clear();
         if (seen[dst] == true)
         {
-            while (!bf_que.empty())
-            {
-                bf_que.pop();
-            }
             vector<int> hopcheck = bfs(g2, N); //最大ホップ数かをチェック
-            sort(hopcheck.begin(), hopcheck.end());
-            int maxhop = hopcheck[hopcheck.size() - 1];
-            if (hopcheck[dst] == maxhop)
+            map<int, int> cnthop;              //ホップ数の出現回数をカウント
+            for (int i = 0; i < hopcheck.size(); i++)
+            {
+                cnthop[hopcheck[i]]++;
+            }
+            vector<int> tmp_hopcheck = bfs(g2, N);
+            //tmp_hopcheck = hopcheck;
+            sort(tmp_hopcheck.begin(), tmp_hopcheck.end());
+            //ホップ数の最大値を調べる
+            int maxhop = tmp_hopcheck[tmp_hopcheck.size() - 1];
+            if (hopcheck[dst] == maxhop) //宛先までが最深のHop数の時
             {
                 out.close();
-                break;
+                break; //終了
             }
             else
             {
                 out.close();
-                seen.assign(N, false);
+                seen.assign(N, false); //seenをリセット
             }
+            while (!bf_que.empty())
+            {
+                bf_que.pop();
+            }
+            tmp_hopcheck.clear();
         }
         else
         {
             out.close();
-            seen.assign(N, false);
+            seen.assign(N, false); //seenをリセット
         }
     }
-
+    //shuffle(g.begin(), g.end(), engine);        //shuffleする
+    //copy(g.begin(), g.begin() + M, g2.begin()); //g2(サイズMにコピー)
     //ファイル書き込み
     /*double cost = rnd.randDoubleRange(0.5, 0.8); //通信成功確率
             int from = rnd(N);                           //0〜N-1の乱数(一様分布)
