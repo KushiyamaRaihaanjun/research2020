@@ -90,7 +90,8 @@ int main(int argc, char *argv[])
 {
     //ofstream out;
     int N = atoi(argv[1]); //ノード数
-    int M = atoi(argv[2]); //エッジ数
+    int M = atoi(argv[2]);
+    //int M = atoi(argv[2]); //エッジ数
     //ノード番号,宛先ノード番号，確率の順に格納
     int cnt = 0;
     seen.assign(N, false);
@@ -112,6 +113,7 @@ int main(int argc, char *argv[])
     //ofstream out("topology.txt");
     while (1)
     {
+        int one_hop_count = 0; //送信元から1hopのノードの数
         ofstream out("topology.txt");
         for (int i = 0; i < M; i++)
         {
@@ -120,11 +122,12 @@ int main(int argc, char *argv[])
             double rate = rnd.randDoubleRange(0.5, 0.8);
             if (from < to && nodeval[{from, to}] == 0 && !(from == 0 && to == dst))
             {
-                if (from == 0 && nodeval[{from, to}] == 0)
+                if (from == 0 && one_hop_count < N / 4)
                 {
                     g2[from].push_back(Edge(to, rate));
                     out << from << " " << to << " " << rate << endl;
                     nodeval[{from, to}]++;
+                    one_hop_count++;
                 }
                 else if (from > 0 && nodeval[{0, from}] == 0) //fromが送信元と接続がない場合
                 {
@@ -156,32 +159,32 @@ int main(int argc, char *argv[])
         g2.clear();
         if (seen[dst] == true)
         {
-            vector<int> hopcheck = bfs(g2, N); //最大ホップ数かをチェック
-            map<int, int> cnthop;              //ホップ数の出現回数をカウント
-            for (int i = 0; i < hopcheck.size(); i++)
-            {
-                cnthop[hopcheck[i]]++;
-            }
-            vector<int> tmp_hopcheck = bfs(g2, N);
+            //vector<int> hopcheck = bfs(g2, N); //最大ホップ数かをチェック
+            //map<int, int> cnthop;              //ホップ数の出現回数をカウント
+            //for (int i = 0; i < hopcheck.size(); i++)
+            //{
+            //    cnthop[hopcheck[i]]++;
+            //}
+            //vector<int> tmp_hopcheck = bfs(g2, N);
             //tmp_hopcheck = hopcheck;
-            sort(tmp_hopcheck.begin(), tmp_hopcheck.end());
+            //sort(tmp_hopcheck.begin(), tmp_hopcheck.end());
             //ホップ数の最大値を調べる
-            int maxhop = tmp_hopcheck[tmp_hopcheck.size() - 1];
-            if (hopcheck[dst] == maxhop) //宛先までが最深のHop数の時
-            {
-                out.close();
-                break; //終了
-            }
-            else
-            {
-                out.close();
-                seen.assign(N, false); //seenをリセット
-            }
-            while (!bf_que.empty())
-            {
-                bf_que.pop();
-            }
-            tmp_hopcheck.clear();
+            //int maxhop = tmp_hopcheck[tmp_hopcheck.size() - 1];
+            //if (hopcheck[dst] == maxhop) //宛先までが最深のHop数の時
+            //{
+            out.close();
+            break; //終了
+            //}
+            //else
+            //{
+            //    out.close();
+            //    seen.assign(N, false); //seenをリセット
+            //}
+            //while (!bf_que.empty())
+            //{
+            //    bf_que.pop();
+            //}
+            //tmp_hopcheck.clear();
         }
         else
         {

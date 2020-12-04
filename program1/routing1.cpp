@@ -15,12 +15,12 @@ using namespace std;
 typedef long long int lli;
 
 #define INF 1e30
-const int N = 7; // number of nodes (observer)
+const int N = 50; // number of nodes (observer)
 const int d = N - 1;
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;
 double threshold = 0.6; // trust value threshold
-const int numberofpackets = 10;
+const int numberofpackets = 100;
 double tmpetx = 0.0;  //etx計算用
 vector<bool> seen;    // 到達可能かどうかを調べる
 vector<bool> checked; // 送信元から1hopノードが送信しているか
@@ -320,7 +320,7 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     dijkstra_etx(gr, num_edge.to, cs);                 //num_edge.to から宛先までのetxを求めている
                     to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //source(送信元ではない)から宛先へのetx
                     cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
-                    pq_intermediate[i].emplace(to_etx, num_edge.to);
+                    pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                 }
                 else
                 {
@@ -559,50 +559,58 @@ void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
     checked[N - 1] = true;
     cnt++;
     int now_hopnum = 1;
-    //1~N-2を調べるまで
-    cout << "2 hop" << endl;
+
     int mxhop = GetMaxHop(); //ホップ数(最大)
                              //while (cnt < N - 1)
                              //{
-    for (int i = 2; i < mxhop; i++)
+    //送信元から2ホップ以上
+    for (int i = 1; i < mxhop; i++)
     {
+        cout << i + 1 << " hop" << endl;
         //まだ調べていないノードがある場合
-        if (checked[pq_intermediate[i].top().second] == false) //ホップ数主体に書き換える
+        //if (checked[pq_intermediate[i].top().second] == false) //ホップ数主体に書き換える
+        //{
+        //int node_num = tmp_pq_onehop_fromsource.top().second; //ノード番号(優先度順)
+        //優先度キューを退避
+        priority_queue<P, vector<P>, greater<P>> tmp_pq_intermediate = pq_intermediate[i];
+        int highest_sev;
+        highest_sev = tmp_pq_intermediate.top().second;
+        while (!pq_intermediate[i].empty()) //ソースを中継ノードに置き換える
         {
-            //int node_num = tmp_pq_onehop_fromsource.top().second; //ノード番号(優先度順)
-            //優先度キューを退避
-            priority_queue<P, vector<P>, greater<P>> tmp_pq_intermediate = pq_intermediate[i];
-            int highest_sev;
-            highest_sev = tmp_pq_intermediate.top().second;
-            while (!pq_intermediate[i].empty()) //ソースを中継ノードに置き換える
+            //if (checked[pq_intermediate[i].top().second] == false) //チェック済みでない
+            //{
+            int node_num_sev = pq_intermediate[i].top().second; //ノード番号を取得
+            //優先度を表示
+            //数字(size)が大きいほど高い優先度
+            cout << "Node " << node_num_sev << " priority " << pq_intermediate[i].size() << endl;
+            for (auto num_edge : gr[node_num_sev]) //num_edge...接続しているエッジ
             {
-                int node_num_sev = pq_intermediate[i].top().second; //ノード番号を取得
-                //優先度を表示
-                //数字(size)が大きいほど高い優先度
-                cout << "Node " << node_num_sev << " priority " << pq_intermediate[i].size() << endl;
-                for (auto num_edge : gr[node_num_sev]) //num_edge...接続しているエッジ
+                //送信先のノードのETXを計算する
+                //priority_queueの配列から次の送信ノードを取得
+                //実際送信するところ
+                queue<int> tmp = n[node_num_sev].q; //キューの中身をいったん退避(ブロードキャストのため)
+                if (node_num_sev != highest_sev)    //もっとも優先度の高いノードでない場合
                 {
-                    //送信先のノードのETXを計算する
-                    //priority_queueの配列から次の送信ノードを取得
-                    //実際送信するところ
-                    queue<int> tmp = n[node_num_sev].q; //キューの中身をいったん退避(ブロードキャストのため)
-                    if (node_num_sev != highest_sev)    //もっとも優先度の高いノードでない場合
-                    {
-                        //優先度がより低い場合
-                        SendFromlessPrior(n, tmp_pq_intermediate, node_num_sev, num_edge, n[node_num_sev].q);
-                    }
-                    else //最も優先度が高い場合
-                    {
-                        //優先度が高いノードから送信
-                        SendFromHighestPrior(n, node_num_sev, num_edge, n[node_num_sev].q);
-                    }                        //end if
-                    n[node_num_sev].q = tmp; //退避していたキューの中身をもとに戻す
+                    //優先度がより低い場合
+                    SendFromlessPrior(n, tmp_pq_intermediate, node_num_sev, num_edge, n[node_num_sev].q);
                 }
-                checked[pq_intermediate[i].top().second] = true;
-                pq_intermediate[i].pop();
-                //cnt++;
+                else //最も優先度が高い場合
+                {
+                    //優先度が高いノードから送信
+                    SendFromHighestPrior(n, node_num_sev, num_edge, n[node_num_sev].q);
+                }                        //end if
+                n[node_num_sev].q = tmp; //退避していたキューの中身をもとに戻す
             }
+            checked[pq_intermediate[i].top().second] = true;
+            pq_intermediate[i].pop();
+            //}
+            //else
+            //{
+            //    pq_intermediate[i].pop();
+            //}
+            //cnt++;
         }
+        //}
     } //end for
       //now_hopnum++; //調べるHop数を増やす
     //}                 //end while
@@ -710,6 +718,13 @@ void edge_set_from_file(Graph &gr)
 }
 void edge_set(Graph &gr)
 {
+    //gr[0].push_back(Edge(1, 0.8));
+    //gr[0].push_back(Edge(2, 0.8));
+    //gr[0].push_back(Edge(3, 0.8));
+    //gr[1].push_back(Edge(4, 1.0));
+    //gr[2].push_back(Edge(4, 1.0));
+    //gr[3].push_back(Edge(4, 1.0));
+
     //ノード番号，通信成功率の組
     gr[0].push_back(Edge(1, 0.8));
     gr[0].push_back(Edge(2, 0.8));
