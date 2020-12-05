@@ -1,5 +1,5 @@
-//信頼値測定なし
-
+//From 2020-12-5
+//信頼値測定を加えたバージョン2
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
@@ -33,9 +33,8 @@ struct Edge
     double tsuccess_rate;
     Edge(int t, double rate) : to(t), tsuccess_rate(rate){};
 };
-using Graph = vector<vector<Edge>>; //グラフ型
-using P = pair<double, int>;        //ETX,ノード番号のペア
-
+using Graph = vector<vector<Edge>>;                            //グラフ型
+using P = pair<double, int>;                                   //ETX,ノード番号のペア
 priority_queue<P, vector<P>, greater<P>> pq_onehop_fromsource; //1hopノードの優先度付きキュー
 priority_queue<P, vector<P>, greater<P>> pq_intermediate[N];   //各ノードの優先度付きキュー
 struct Node
@@ -58,7 +57,8 @@ struct Node
     double dtv;
     double itv;
 };
-
+//解体する？
+//dtvをうまく使った形に変更する
 struct ONode
 {
     //alpha...number of packets successfully received
@@ -76,7 +76,8 @@ struct ONode
 
     void set_itv(Node y[])
     {
-        for (int i = 0; i < N; i++)
+        //ここを何とかする
+        for (int i = 0; i < N; i++) //Nを変更する，Nは本来オブザーバーの数だった:グラフで取得する
         {
             if (y[i].dtv > threshold && dtv[i] > threshold)
             {
@@ -118,12 +119,12 @@ double ds_trust(ONode x)
     /*U を0 に，H を1 に対応させる*/
     double val = 1.0;
     double val2 = 0.0;
-    for (int i = 0; i < (1 << N); i++)
+    for (int i = 0; i < (1 << N); i++) //N->変更
     {
         bitset<N> state(i);
         if (i != 0)
         {
-            for (int j = 0; j < N; j++)
+            for (int j = 0; j < N; j++) //N->変更
             {
                 if (state[j] == 0)
                 {
@@ -182,9 +183,43 @@ double ds_all(ONode x)
     return val2;
 }
 
-void set_dtv()
+////////追加///////////
+
+//インタラクション数をイベントに応じてカウント増やす
+void cnt_inter(Node n[], int node_num, int ev_val) //ev_val...イベント種別
 {
+    if (ev_val == 0) //0...送信成功などの動作
+    {
+        n[node_num].alpha++;
+    }
+    else if (ev_val == 1) //1...送信失敗などの動作
+    {
+        n[node_num].beta++;
+    }
+    else //重複などはこっちへ
+    {
+        n[node_num].alpha++;
+    }
 }
+//インタラクション数をリセット
+//最初にかならず呼ぶ
+void cntint_flush(Node n[], int node_num)
+{
+    n[node_num].alpha = 0;
+    n[node_num].beta = 0;
+}
+
+//dtvを，そのノード(node_num)について計算
+void caliculate_and_set_dtv(Node n[], int node_num)
+{
+    uint32_t all_val = n[node_num].alpha + n[node_num].beta;
+    n[node_num].dtv = (double)(n[node_num].alpha / all_val);
+    //ここで返すか返さないか
+    //return (double)(n[node_num].alpha / all_val);
+}
+
+////////////////////////
+
 //深さ優先探索
 //etx値を一つに決めなければならない？
 void dfs(const Graph &gr, int ver)
@@ -442,6 +477,8 @@ void SendFromlessPrior(Node n[], priority_queue<P, vector<P>, greater<P>> tmp_pq
     } //end while for que
 }
 
+//node_num...送信元
+//num_edge.to...宛先
 //優先度が高いノードからの送信
 void SendFromHighestPrior(Node n[], int node_num, Edge num_edge, queue<int> que)
 {
@@ -468,8 +505,7 @@ void SendFromHighestPrior(Node n[], int node_num, Edge num_edge, queue<int> que)
             //to do
             //エッジを調べる
             //成功or重複をnode_numに通知
-
-            //成功or重複をnode_numに通知
+            //成功or重複を周辺ノードへ通知
         }
         else
         {

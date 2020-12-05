@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
             double rate = rnd.randDoubleRange(0.5, 0.8);
             if (from < to && nodeval[{from, to}] == 0 && !(from == 0 && to == dst))
             {
-                if (from == 0 && one_hop_count < N / 4)
+                if (from == 0 && one_hop_count < 10)
                 {
                     g2[from].push_back(Edge(to, rate));
                     out << from << " " << to << " " << rate << endl;
