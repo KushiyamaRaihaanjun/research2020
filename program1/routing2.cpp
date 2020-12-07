@@ -21,12 +21,13 @@ const int N = 50; // number of nodes (observer)
 const int d = N - 1;
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;
-double threshold = 0.6; // trust value threshold
-const int numberofpackets = 10000;
-double tmpetx = 0.0;  //etx計算用
-vector<bool> seen;    // 到達可能かどうかを調べる
-vector<bool> checked; // 送信元から1hopノードが送信しているか
-vector<double> cs;    //宛先までのetxを求めるための配列
+double threshold = 0.6;            // 信頼値の閾値
+double theta = 0.5;                //直接的な信頼値の重み
+const int numberofpackets = 10000; //送信するパケット数
+double tmpetx = 0.0;               //etx計算用
+vector<bool> seen;                 // 到達可能かどうかを調べる
+vector<bool> checked;              // 送信元から1hopノードが送信しているか
+vector<double> cs;                 //宛先までのetxを求めるための配列
 struct Edge
 {
     int to;
@@ -59,6 +60,8 @@ struct Node
 };
 //解体する？
 //dtvをうまく使った形に変更する
+
+//ONode : dsarrayの計算についてもう少し考える
 struct ONode
 {
     //alpha...number of packets successfully received
@@ -75,7 +78,7 @@ struct ONode
     vector<double> dtv;
     double itv;
     //set_itv : 観察ノードの間接的な信頼値をセットする
-    void set_itv(ONode on[], const Graph &gr, int node_num_from, int node_num_to)
+    void set_itv_rel(ONode on[], const Graph &gr, int node_num_from, int node_num_to)
     {
         //ここを何とかする
         //for (int i = 0; i < N; i++) //Nを変更する，Nは本来オブザーバーの数だった:グラフで取得する
@@ -106,7 +109,7 @@ struct ONode
         {
             if (node_num_to != collect.to)
             {
-                //on[collect.to].dtv[node_num_from]は証拠を聞くノードの信頼値,dtv[i]はy[i]->観測対象ノードにおける直接的な信頼値
+                //on[collect.to].dtv[node_num_from]は証拠を聞くノードの信頼値,dtv[collect.to]はcollect.to->観測対象ノードにおける直接的な信頼値
                 if (on[collect.to].dtv[node_num_from] > threshold && dtv[collect.to] > threshold) //y[i]が信頼できるノードかつ観測対象ノードが信頼できるとき
                 {
                     dsarray[collect.to][1] = on[collect.to].dtv[node_num_from];
@@ -276,6 +279,32 @@ void caliculate_and_set_dtv(ONode n[], int node_num_from, int node_num_to) //, c
 
     //ここで返すか返さないか
     //return (double)(n[node_num].alpha / all_val);
+}
+
+//間接的なノード信頼値の計算
+void caliculate_indirect_trust_value(ONode n[], const Graph &g, int node_num_from, int node_num_to)
+{
+    n[node_num_to].set_itv_rel(n, g, node_num_from, node_num_to);
+    n[node_num_to].itv = ds_trust(n[node_num_to], g, node_num_from) / ds_all(n[node_num_to]);
+}
+
+//最終的な信頼値測定
+double cal_get_trust_value(ONode n[], int node_num_from, int node_num_to)
+{
+    double trust_value;
+    trust_value = theta * n[node_num_to].dtv[node_num_from] + (1 - theta) * n[node_num_to].itv;
+    return trust_value;
+}
+
+//直接的・間接的な信頼値を0.5で初期化
+void init_itv(ONode n[], int node_num_to)
+{
+    n[node_num_to].itv = 0.5;
+}
+
+void init_dtv(ONode n[], int node_num_from, int node_num_to)
+{
+    n[node_num_to].dtv[node_num_from] = 0.5;
 }
 
 ////////////////////////
