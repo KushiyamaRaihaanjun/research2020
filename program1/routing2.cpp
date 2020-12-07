@@ -248,6 +248,7 @@ double ds_all(ONode x, const Graph &gr, int node_num)
         }
         else
         {
+            //nb_nodesで順番に取得していく？
             for (int j = 0; j < observer_node_size; j++)
             //for (auto j : gr[node_num])
             {
@@ -778,6 +779,7 @@ void simulate_with_Tv()
 
 void simulate_without_Tv()
 {
+    bool f = true;
 }
 
 //送受信マップのセット
@@ -914,7 +916,7 @@ int main(void)
     //edge_set(g);
     edge_set_from_file(g);
     Node node[N];
-    ONode obsed_node[N];
+    ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
     set_map(node);
