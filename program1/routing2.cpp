@@ -175,30 +175,37 @@ double ds_trust(ONode x, const Graph &gr, int node_num)
     //↑ノード3つだったら0~7を計算するからそんなに関係なかった
     //要するにbitで集合を管理しているからオーバーフローは気にしなくてもよい
     //jのfor文だけ変更
+    //for文でノード番号を順番にプッシュしておく
+    //0...(nodenum-1)でアクセスできるようにする
+    vector<int> nb_nodes(observer_node_size);
+    for (auto num_edge : gr[node_num])
+    {
+        nb_nodes.push_back(num_edge.to);
+    }
     for (int i = 0; i < (1 << observer_node_size); i++) //N->変更
     {
         //bitset<observer_node_size> state(i);
         fill(binarray, binarray + 18, 0); //0をセット
         num_to_bin(i);                    //二進法変換(bitsetが使えないため)
-        if (i != 0)
+        if (i != 0)                       //UU...以外を計算
         {
-            for (int j = 0; j < observer_node_size; j++) //N->変更
-            //for (auto j : gr[node_num])
-            //binarrayが関係ないところの添え字を変える
+            for (int j = 0; j < observer_node_size; j++)
             {
+                //binarrayが関係ないところの添え字を変える
                 if (binarray[j] == 0)
                 {
-                    val *= x.dsarray[j][binarray[j] + 3]; //0+3だからなくてもいい
+                    val *= x.dsarray[nb_nodes[j]][binarray[j] + 3]; //0+3だからなくてもいい
                 }
                 else
                 {
-                    val *= x.dsarray[j][binarray[j]];
+                    val *= x.dsarray[nb_nodes[j]][binarray[j]];
                 }
             }
             val2 += val;
         }
         val = 1.0;
     }
+    nb_nodes.clear(); //配列のクリア
     return val2;
 }
 
@@ -218,16 +225,22 @@ double ds_all(ONode x, const Graph &gr, int node_num)
     //3 ^ N の全列挙をやる
     //node_numは信頼値測定を行うノードのノード番号（のつもり）
     //オーバフロー起こりそう
+    //ds_trustと同じ
     map<int, int> setcount;
     int observer_node_size = gr[node_num].size();
+    vector<int> nb_nodes(observer_node_size);
+    for (auto num_edge : gr[node_num])
+    {
+        nb_nodes.push_back(num_edge.to);
+    }
     for (int i = 0; i < (int)(pow(3, observer_node_size)); i++)
     {
         fill(threearray, threearray + 18, 0);
         num_to_three(i);
-        //for (int j = 0; j < N; j++)
-        for (auto j : gr[node_num])
+        for (int j = 0; j < observer_node_size; j++)
+        //for (auto j : gr[node_num])
         {
-            setcount[threearray[j.to] + 1]++;
+            setcount[threearray[j] + 1]++;
         }
         if (setcount[1] > 0 && setcount[2] > 0)
         {
@@ -235,16 +248,17 @@ double ds_all(ONode x, const Graph &gr, int node_num)
         }
         else
         {
-            //for (int j = 0; j < N; j++)
-            for (auto j : gr[node_num])
+            for (int j = 0; j < observer_node_size; j++)
+            //for (auto j : gr[node_num])
             {
-                val *= x.dsarray[j.to][threearray[j.to] + 1];
+                val *= x.dsarray[nb_nodes[j]][threearray[j] + 1];
             }
             val2 += val;
         }
         val = 1.0;
         setcount.clear();
     }
+    nb_nodes.clear();
     return val2;
 }
 
