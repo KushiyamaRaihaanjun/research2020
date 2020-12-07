@@ -135,7 +135,7 @@ struct ONode
 
 //三進法変換
 int threearray[18];
-void xtothree(int x)
+void num_to_three(int x)
 {
     int power3 = 1;
     for (int i = 0; i < 18; i++)
@@ -167,8 +167,14 @@ double ds_trust(ONode x, const Graph &gr, int node_num)
     //グラフからノード番号を取得する必要がありそう
     //添え字を何とかする
     /*
-    観測ノードの番号...<observer_node_size未満
+    観測ノードの番号... < observer_node_size未満
+    xには観察対象ノードの番号付きで入っている
     */
+    //bit全探索の計算は計算結果自体は同じになりそうだけど，メモリを節約しないと無駄な計算をしそう
+    //ノード番号で管理するとオーバーフローが起こりそう(最悪2^49)
+    //↑ノード3つだったら0~7を計算するからそんなに関係なかった
+    //要するにbitで集合を管理しているからオーバーフローは気にしなくてもよい
+    //jのfor文だけ変更
     for (int i = 0; i < (1 << observer_node_size); i++) //N->変更
     {
         //bitset<observer_node_size> state(i);
@@ -177,10 +183,12 @@ double ds_trust(ONode x, const Graph &gr, int node_num)
         if (i != 0)
         {
             for (int j = 0; j < observer_node_size; j++) //N->変更
+            //for (auto j : gr[node_num])
+            //binarrayが関係ないところの添え字を変える
             {
                 if (binarray[j] == 0)
                 {
-                    val *= x.dsarray[j][binarray[j] + 3];
+                    val *= x.dsarray[j][binarray[j] + 3]; //0+3だからなくてもいい
                 }
                 else
                 {
@@ -189,14 +197,13 @@ double ds_trust(ONode x, const Graph &gr, int node_num)
             }
             val2 += val;
         }
-
         val = 1.0;
     }
     return val2;
 }
 
 //すべての場合を計算する
-double ds_all(ONode x)
+double ds_all(ONode x, const Graph &gr, int node_num)
 {
     double all_val = 0.0;
     double val = 1.0;
@@ -209,14 +216,18 @@ double ds_all(ONode x)
     U...3
     */
     //3 ^ N の全列挙をやる
+    //node_numは信頼値測定を行うノードのノード番号（のつもり）
+    //オーバフロー起こりそう
     map<int, int> setcount;
-    for (int i = 0; i < (int)(pow(3, N)); i++)
+    int observer_node_size = gr[node_num].size();
+    for (int i = 0; i < (int)(pow(3, observer_node_size)); i++)
     {
         fill(threearray, threearray + 18, 0);
-        xtothree(i);
-        for (int j = 0; j < N; j++)
+        num_to_three(i);
+        //for (int j = 0; j < N; j++)
+        for (auto j : gr[node_num])
         {
-            setcount[threearray[j] + 1]++;
+            setcount[threearray[j.to] + 1]++;
         }
         if (setcount[1] > 0 && setcount[2] > 0)
         {
@@ -224,9 +235,10 @@ double ds_all(ONode x)
         }
         else
         {
-            for (int j = 0; j < N; j++)
+            //for (int j = 0; j < N; j++)
+            for (auto j : gr[node_num])
             {
-                val *= x.dsarray[j][threearray[j] + 1];
+                val *= x.dsarray[j.to][threearray[j.to] + 1];
             }
             val2 += val;
         }
@@ -258,7 +270,7 @@ void cnt_inter(ONode n[], int node_num_from, int node_num_to, int ev_val) //ev_v
     }
 }
 //インタラクション数をリセット
-//最初にかならず呼ぶ
+//最初にかならず呼び，ラウンドの更新ごとにも呼ぶ
 //node_num_from...観察するノード
 //node_num_to...観察されるノード
 void cntint_flush(ONode n[], int node_num_from, int node_num_to)
@@ -285,7 +297,7 @@ void caliculate_and_set_dtv(ONode n[], int node_num_from, int node_num_to) //, c
 void caliculate_indirect_trust_value(ONode n[], const Graph &g, int node_num_from, int node_num_to)
 {
     n[node_num_to].set_itv_rel(n, g, node_num_from, node_num_to);
-    n[node_num_to].itv = ds_trust(n[node_num_to], g, node_num_from) / ds_all(n[node_num_to]);
+    n[node_num_to].itv = ds_trust(n[node_num_to], g, node_num_from) / ds_all(n[node_num_to], g, node_num_from);
 }
 
 //最終的な信頼値測定
@@ -299,12 +311,12 @@ double cal_get_trust_value(ONode n[], int node_num_from, int node_num_to)
 //直接的・間接的な信頼値を0.5で初期化
 void init_itv(ONode n[], int node_num_to)
 {
-    n[node_num_to].itv = 0.5;
+    n[node_num_to].itv = 0.6;
 }
 
 void init_dtv(ONode n[], int node_num_from, int node_num_to)
 {
-    n[node_num_to].dtv[node_num_from] = 0.5;
+    n[node_num_to].dtv[node_num_from] = 0.6;
 }
 
 ////////////////////////
@@ -326,7 +338,7 @@ void dfs(const Graph &gr, int ver)
 
 //幅優先探索
 //Hop数をトポロジから事前計算
-vector<int> bf_dist(N, -1); // 全頂点を「未訪問」に初期化
+vector<int> bf_dist(N, -1); // 全頂点を未訪問に初期化
 queue<int> bf_que;
 void bfs(const Graph &gr)
 {
