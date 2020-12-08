@@ -17,18 +17,20 @@ using namespace std;
 typedef long long int lli;
 
 #define INF 1e30
-const int N = 50;    // number of nodes
-const int d = N - 1; //宛先
-int send_round = 0;  //ラウンド
+const int N = 50;        // number of nodes
+const int d = N - 1;     //宛先
+int send_round = 0;      //ラウンド
+const int mx_round = 10; //ラウンドの最大
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
-double constant_suc_rate = 0.8;
-double threshold = 0.6;            // 信頼値の閾値
-double theta = 0.5;                //直接的な信頼値の重み
-const int numberofpackets = 10000; //送信するパケット数
-double tmpetx = 0.0;               //etx計算用
-vector<bool> seen;                 // 到達可能かどうかを調べる
-vector<bool> checked;              // 送信元から1hopノードが送信しているか
-vector<double> cs;                 //宛先までのetxを求めるための配列
+double constant_suc_rate = 0.8;             //通信成功率(定数)
+double threshold = 0.6;                     // 信頼値の閾値
+double theta = 0.5;                         //直接的な信頼値の重み
+const int numberofpackets = 100 * mx_round; //送信するパケット数
+double tmpetx = 0.0;                        //etx計算用
+vector<bool> seen;                          // 到達可能かどうかを調べる
+vector<bool> checked;                       // 送信元から1hopノードが送信しているか
+vector<double> cs;                          //宛先までのetxを求めるための配列
+//エッジ型
 struct Edge
 {
     int to;
@@ -70,8 +72,8 @@ struct ONode
 {
     //alpha...number of packets successfully received
     //beta .. all of packets transmitted
-    uint32_t alpha[1000][10];
-    uint32_t beta[1000][10];
+    uint32_t alpha[1000][mx_round];
+    uint32_t beta[1000][mx_round];
     double dsarray[1000][4]; //D-S理論計算
     int state;
     /*0(emptyset)
@@ -318,6 +320,7 @@ void cntint_flush(ONode n[], int node_num_from, int node_num_to)
 //dtvを，そのノード(node_num_to)について計算し，セットする
 //node_num_from...観察するノード
 //node_num_to...観察されるノード
+//dtvにはラウンドがあることに注意
 void caliculate_and_set_dtv(ONode n[], int node_num_from, int node_num_to) //, const Graph &gr)
 {
     uint32_t all_val = n[node_num_to].alpha[node_num_from][send_round] + n[node_num_to].beta[node_num_from][send_round];
@@ -346,7 +349,7 @@ double cal_get_trust_value(ONode n[], int node_num_from, int node_num_to)
     return trust_value;
 }
 
-//直接的・間接的な信頼値を0.5で初期化
+//直接的・間接的な信頼値を0.6で初期化
 void init_itv(ONode n[], int node_num_to)
 {
     n[node_num_to].itv = 0.6;
@@ -366,6 +369,7 @@ void init_dtv(ONode n[], int node_num_from, int node_num_to)
 //    }
 //}
 ///
+//ラウンドを増やす
 void round_set_next()
 {
     send_round++;
@@ -387,7 +391,7 @@ void WhenDetectedAttack(Node node[], int mal_num, int detect_num)
 }
 
 //悪意ノードのリンクを除去
-void RemoveEdgeFromMal(Graph &gr, int mal_edge, int detect_num)
+void RemoveEdgeToMal(Graph &gr, int mal_edge, int detect_num)
 {
     //mal_edgeの要素を削除
     //普通1本だからforじゃなくて良いかも
@@ -731,6 +735,18 @@ void SendFromHighestPrior(Node n[], int node_num, Edge num_edge, queue<int> que)
             //失敗を周辺ノードに通知
         } //end if
     }     //end while
+}
+
+//recvmapの状態を成功に変える
+//変えた上でrecvmapを参照し，100増えたら信頼値関数を呼び出しラウンドを増やす
+void ChangeStatetoSuctoRecvmap(Node n[], int node_num, int packet_num)
+{
+    n[node_num].recvmap[packet_num] = true;
+    //宛先が100個パケットを受信
+    //考える
+    if (count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == 100)
+    {
+    }
 }
 
 void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
