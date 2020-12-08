@@ -19,7 +19,7 @@ typedef long long int lli;
 #define INF 1e30
 const int N = 50;    // number of nodes
 const int d = N - 1; //宛先
-int round = 0;       //ラウンド
+int send_round = 0;  //ラウンド
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;
 double threshold = 0.6;            // 信頼値の閾値
@@ -41,6 +41,7 @@ priority_queue<P, vector<P>, greater<P>> pq_onehop_fromsource; //1hopノード�
 priority_queue<P, vector<P>, greater<P>> pq_intermediate[N];   //各ノードの優先度付きキュー
 vector<int> attacker_array(N);                                 //攻撃ノードの番号が入った配列(攻撃ノード用)
 vector<vector<int>> malnodes_array;                            //悪意のあるノードを検知したときに使う配列(各ノードが保持)
+vector<vector<double>> trust_value_array;                      //信頼値を格納する配列
 struct Node
 {
     //alpha...number of packets successfully received
@@ -69,8 +70,8 @@ struct ONode
 {
     //alpha...number of packets successfully received
     //beta .. all of packets transmitted
-    uint32_t alpha[1000];
-    uint32_t beta[1000];
+    uint32_t alpha[1000][10];
+    uint32_t beta[1000][10];
     double dsarray[1000][4]; //D-S理論計算
     int state;
     /*0(emptyset)
@@ -284,15 +285,15 @@ void cnt_inter(ONode n[], int node_num_from, int node_num_to, int ev_val) //ev_v
 {
     if (ev_val == 0) //0...送信成功などの動作
     {
-        n[node_num_to].alpha[node_num_from]++;
+        n[node_num_to].alpha[node_num_from][send_round]++;
     }
     else if (ev_val == 1) //1...送信失敗などの動作
     {
-        n[node_num_to].beta[node_num_from]++;
+        n[node_num_to].beta[node_num_from][send_round]++;
     }
     else //重複などはこっちへ
     {
-        n[node_num_to].alpha[node_num_from]++;
+        n[node_num_to].alpha[node_num_from][send_round]++;
     }
 }
 //インタラクション数をリセット
@@ -301,8 +302,17 @@ void cnt_inter(ONode n[], int node_num_from, int node_num_to, int ev_val) //ev_v
 //node_num_to...観察されるノード
 void cntint_flush(ONode n[], int node_num_from, int node_num_to)
 {
-    n[node_num_to].alpha[node_num_from] = 0;
-    n[node_num_to].beta[node_num_from] = 0;
+    //ラウンドがゼロのときは初期値1をセット
+    if (send_round == 0)
+    {
+        n[node_num_to].alpha[node_num_from][send_round] = 1;
+        n[node_num_to].beta[node_num_from][send_round] = 1;
+    } //そうでない場合は前のものを代入しておく
+    else
+    {
+        n[node_num_to].alpha[node_num_from][send_round] = n[node_num_to].alpha[node_num_from][send_round - 1];
+        n[node_num_to].beta[node_num_from][send_round] = n[node_num_to].beta[node_num_from][send_round - 1];
+    }
 }
 
 //dtvを，そのノード(node_num_to)について計算し，セットする
@@ -310,10 +320,10 @@ void cntint_flush(ONode n[], int node_num_from, int node_num_to)
 //node_num_to...観察されるノード
 void caliculate_and_set_dtv(ONode n[], int node_num_from, int node_num_to) //, const Graph &gr)
 {
-    uint32_t all_val = n[node_num_to].alpha[node_num_from] + n[node_num_to].beta[node_num_from];
+    uint32_t all_val = n[node_num_to].alpha[node_num_from][send_round] + n[node_num_to].beta[node_num_from][send_round];
     //n[node_num].dtv
     //リンクのあるエッジを取得
-    n[node_num_to].dtv[node_num_from] = (double)(n[node_num_to].alpha[node_num_from] / all_val);
+    n[node_num_to].dtv[node_num_from] = (double)(n[node_num_to].alpha[node_num_from][send_round] / all_val);
 
     //ここで返すか返さないか
     //return (double)(n[node_num].alpha / all_val);
@@ -347,12 +357,24 @@ void init_dtv(ONode n[], int node_num_from, int node_num_to)
     n[node_num_to].dtv[node_num_from] = 0.6;
 }
 //信頼値の更新をラウンドごとに行う関数を書く
-
+//配列に格納しておく
+//void update_trust_value(int node_num)
+//{
+//    if (send_round > 0)
+//    {
+//        trust_value_array[node_num][send_round] = trust_value_array[node_num][send_round - 1];
+//    }
+//}
 ///
+void round_set_next()
+{
+    send_round++;
+}
 
 ////////////////////////
 
 ///////検知時関連///////
+
 //キューが空でない場合単純にパケットをドロップ
 //検知したとき
 void WhenDetectedAttack(Node node[], int mal_num, int detect_num)
