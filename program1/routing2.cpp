@@ -19,6 +19,7 @@ typedef long long int lli;
 #define INF 1e30
 const int N = 50;    // number of nodes
 const int d = N - 1; //宛先
+int round = 0;       //ラウンド
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;
 double threshold = 0.6;            // 信頼値の閾値
@@ -38,6 +39,8 @@ using Graph = vector<vector<Edge>>;                            //グラフ型
 using P = pair<double, int>;                                   //ETX,ノード番号のペア
 priority_queue<P, vector<P>, greater<P>> pq_onehop_fromsource; //1hopノードの優先度付きキュー
 priority_queue<P, vector<P>, greater<P>> pq_intermediate[N];   //各ノードの優先度付きキュー
+vector<int> attacker_array(N);                                 //攻撃ノードの番号が入った配列(攻撃ノード用)
+vector<vector<int>> malnodes_array;                            //悪意のあるノードを検知したときに使う配列(各ノードが保持)
 struct Node
 {
     //alpha...number of packets successfully received
@@ -272,6 +275,7 @@ double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to)
 
 ////////追加///////////
 
+///////測定関連///////
 //インタラクション数をイベントに応じてカウント増やす
 //これだとすべてのノードにおいて信頼値が同じになる
 //node_num_from...観察するノード
@@ -342,8 +346,67 @@ void init_dtv(ONode n[], int node_num_from, int node_num_to)
 {
     n[node_num_to].dtv[node_num_from] = 0.6;
 }
+//信頼値の更新をラウンドごとに行う関数を書く
+
+///
 
 ////////////////////////
+
+///////検知時関連///////
+//キューが空でない場合単純にパケットをドロップ
+//検知したとき
+void WhenDetectedAttack(Node node[], int mal_num, int detect_num)
+{
+    //まだ登録されていない場合登録する
+    if (FindFromMaltable(detect_num, mal_num) == false)
+    {
+        malnodes_array[detect_num].push_back(mal_num);
+    }
+}
+
+//悪意ノードのリンクを除去
+void RemoveEdgeFromMal(Graph &gr, int mal_edge, int detect_num)
+{
+    //mal_edgeの要素を削除
+    //普通1本だからforじゃなくて良いかも
+    for (auto edge : gr[detect_num])
+    {
+        if (edge.to == mal_edge)
+        {
+            gr[detect_num].erase(remove(gr[detect_num].begin(), gr[detect_num].end(), edge), gr[detect_num].end());
+        }
+    }
+}
+
+//登録した攻撃ノードを検索
+bool FindFromMaltable(int node_num, int key)
+{
+    //発見したらtrue
+    for (auto x : malnodes_array[node_num])
+    {
+        if (x == key)
+        {
+            return true;
+        }
+    }
+    //見つからなかったらfalse
+    return false;
+}
+
+////攻撃関連///////////
+
+//攻撃
+void BlackholeAttack(Node node[], int node_num)
+{
+    if (!node[node_num].q.empty())
+    {
+        node[node_num].q.pop();
+    }
+}
+
+//////////////////////
+
+////ルーチング関連////
 
 //深さ優先探索
 //etx値を一つに決めなければならない？
@@ -780,6 +843,7 @@ void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
     //}                 //end while
 }
 
+//////シミュレーション・結果処理関連//////
 //Input:設定したパラメータ
 //Output:値を関数に渡す？
 //測定ありかつ攻撃あり
@@ -858,15 +922,6 @@ void simulate_end()
     //string result = "xxx.csv";
 }
 
-//キューが空でない場合単純にパケットをドロップ
-void BlackholeAttack(Node node[], int node_num)
-{
-    if (!node[node_num].q.empty())
-    {
-        node[node_num].q.pop();
-    }
-}
-
 void edge_set_from_file(Graph &gr)
 {
     //ファイルから読み込む形に変更する
@@ -920,6 +975,9 @@ vector<vector<int>> GetAllRoute()
 {
 }
 
+////////////////////////////////////
+
+/////main////////////////////////////
 int main(void)
 {
     //ノードの位置を入力(あとで？)
