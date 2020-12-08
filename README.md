@@ -73,7 +73,7 @@ ORの実装・信頼値測定についてのメモ
     - [BFS (幅優先探索) 超入門！ 〜 キューを鮮やかに使いこなす 〜](https://qiita.com/drken/items/996d80bcae64649a6580)
     - [C, C++でのファイル入力をまとめてみたよ](https://qiita.com/Reed_X1319RAY/items/098596cda78e9c1a6bad)
 - その他
-    - [uniform_real_distribution]((https://cpprefjp.github.io/reference/random/uniform_real_distribution.html))
+    - [uniform_real_distribution](https://cpprefjp.github.io/reference/random/uniform_real_distribution.html)
     - [cpprefjp - C++日本語リファレンス](https://cpprefjp.github.io/)
     - [グラフ理論(北海道大学)](https://ocw.hokudai.ac.jp/wp-content/uploads/2016/01/GraphTheory-2007-Note-all.pdf)
     - [グラフ探索アルゴリズムとその応用](https://www.ioi-jp.org/camp/2011/hosaka-graph.pdf)
@@ -111,15 +111,22 @@ ORの実装・信頼値測定についてのメモ
 - BFS
     - hop数を取得するのに用いる
 ## 実装に関するTo do
-- To do(11/30)
+- To do(12/8)
+    <!--
     - 理論計算
         - 特定のトポロジーを作って試す
+    -->
     - トポロジのランダム生成
         - ノード数を増やす
         - 通信成功率の設定
     - 攻撃の実装
+        - 送信の関数のところでやる？
+        - for文が増える::ちょっと面倒
     - 信頼値測定の実装
+        - dtv...エッジのあるノードを観察
+        - itv...1hopノード内で観察，あるノードから1hopノードは互いに通信できると仮定
     - ルートを求める関数を作る
+
 - 不具合
     - 優先度がもっとも高いノードが送信するとき，重複を避けないケース
 
