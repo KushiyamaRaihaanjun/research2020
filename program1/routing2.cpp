@@ -21,15 +21,17 @@ const int N = 50;        // number of nodes
 const int d = N - 1;     //宛先
 int send_round = 0;      //ラウンド
 const int mx_round = 10; //ラウンドの最大
+int mode = 0;            //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
-double constant_suc_rate = 0.8;             //通信成功率(定数)
-double threshold = 0.6;                     // 信頼値の閾値
-double theta = 0.5;                         //直接的な信頼値の重み
-const int numberofpackets = 100 * mx_round; //送信するパケット数
-double tmpetx = 0.0;                        //etx計算用
-vector<bool> seen;                          // 到達可能かどうかを調べる
-vector<bool> checked;                       // 送信元から1hopノードが送信しているか
-vector<double> cs;                          //宛先までのetxを求めるための配列
+double constant_suc_rate = 0.8;                     //通信成功率(定数)
+double threshold = 0.5000;                          // 信頼値の閾値
+double theta = 0.5;                                 //直接的な信頼値の重み
+const int packet_step = 100;                        //ラウンドで送信するパケット数
+const int numberofpackets = packet_step * mx_round; //送信するパケット数
+double tmpetx = 0.0;                                //etx計算用
+vector<bool> seen;                                  // 到達可能かどうかを調べる
+vector<bool> checked;                               // 送信元から1hopノードが送信しているか
+vector<double> cs;                                  //宛先までのetxを求めるための配列
 //エッジ型
 struct Edge
 {
@@ -283,70 +285,121 @@ double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to)
 //これだとすべてのノードにおいて信頼値が同じになる
 //node_num_from...観察するノード
 //node_num_to...観察されるノード
-void cnt_inter(ONode n[], int node_num_from, int node_num_to, int ev_val) //ev_val...イベント種別
+void cnt_inter(ONode on[], int node_num_from, int node_num_to, int ev_val) //ev_val...イベント種別
 {
     if (ev_val == 0) //0...送信成功などの動作
     {
-        n[node_num_to].alpha[node_num_from][send_round]++;
+        on[node_num_to].alpha[node_num_from][send_round]++;
     }
     else if (ev_val == 1) //1...送信失敗などの動作
     {
-        n[node_num_to].beta[node_num_from][send_round]++;
+        on[node_num_to].beta[node_num_from][send_round]++;
     }
     else //重複などはこっちへ
     {
-        n[node_num_to].alpha[node_num_from][send_round]++;
+        on[node_num_to].alpha[node_num_from][send_round]++;
     }
 }
 //インタラクション数をリセット
 //最初にかならず呼び，ラウンドの更新ごとにも呼ぶ
 //node_num_from...観察するノード
 //node_num_to...観察されるノード
-void cntint_flush(ONode n[], int node_num_from, int node_num_to)
+void cntint_flush(ONode on[], int node_num_from, int node_num_to)
 {
     //ラウンドがゼロのときは初期値1をセット
     if (send_round == 0)
     {
-        n[node_num_to].alpha[node_num_from][send_round] = 1;
-        n[node_num_to].beta[node_num_from][send_round] = 1;
+        on[node_num_to].alpha[node_num_from][send_round] = 1;
+        on[node_num_to].beta[node_num_from][send_round] = 1;
     } //そうでない場合は前のものを代入しておく
     else
     {
-        n[node_num_to].alpha[node_num_from][send_round] = n[node_num_to].alpha[node_num_from][send_round - 1];
-        n[node_num_to].beta[node_num_from][send_round] = n[node_num_to].beta[node_num_from][send_round - 1];
+        on[node_num_to].alpha[node_num_from][send_round] = on[node_num_to].alpha[node_num_from][send_round - 1];
+        on[node_num_to].beta[node_num_from][send_round] = on[node_num_to].beta[node_num_from][send_round - 1];
     }
 }
-
+//すべてのノードのインタラクションをリセット
+void cntint_flush_all(ONode on[]) //, Graph &gr)
+{
+    //インタラクション数をリンクのある各ノードについて初期化
+    //自分自身以外のやつを初期化
+    for (int x = 0; x < N; x++)
+    {
+        for (int y = 0; y < N; y++)
+        {
+            if (x != y)
+            {
+                cntint_flush(on, x, y);
+            }
+        }
+    }
+}
 //dtvを，そのノード(node_num_to)について計算し，セットする
 //node_num_from...観察するノード
 //node_num_to...観察されるノード
 //dtvにはラウンドがあることに注意
-void caliculate_and_set_dtv(ONode n[], int node_num_from, int node_num_to) //, const Graph &gr)
+void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to) //, const Graph &gr)
 {
-    uint32_t all_val = n[node_num_to].alpha[node_num_from][send_round] + n[node_num_to].beta[node_num_from][send_round];
+    uint32_t all_val = on[node_num_to].alpha[node_num_from][send_round] + on[node_num_to].beta[node_num_from][send_round];
     //n[node_num].dtv
     //リンクのあるエッジを取得
-    n[node_num_to].dtv[node_num_from] = (double)(n[node_num_to].alpha[node_num_from][send_round] / all_val);
+    on[node_num_to].dtv[node_num_from] = (double)(on[node_num_to].alpha[node_num_from][send_round] / all_val);
 
     //ここで返すか返さないか
     //return (double)(n[node_num].alpha / all_val);
 }
 
 //間接的なノード信頼値の計算
-void caliculate_indirect_trust_value(ONode n[], const Graph &g, int node_num_from, int node_num_to)
+void caliculate_indirect_trust_value(ONode on[], const Graph &g, int node_num_from, int node_num_to)
 {
     //間接的にノードに観察させる
-    n[node_num_to].set_itv_rel(n, g, node_num_from, node_num_to);
+    on[node_num_to].set_itv_rel(on, g, node_num_from, node_num_to);
     //dempster-shafer理論の計算
-    n[node_num_to].itv = ds_trust(n[node_num_to], g, node_num_from, node_num_to) / ds_all(n[node_num_to], g, node_num_from, node_num_to);
+    on[node_num_to].itv = ds_trust(on[node_num_to], g, node_num_from, node_num_to) / ds_all(on[node_num_to], g, node_num_from, node_num_to);
 }
 
 //最終的な信頼値測定
-double cal_get_trust_value(ONode n[], int node_num_from, int node_num_to)
+double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to)
 {
     double trust_value;
-    trust_value = theta * n[node_num_to].dtv[node_num_from] + (1 - theta) * n[node_num_to].itv;
+    trust_value = theta * on[node_num_to].dtv[node_num_from] + (1 - theta) * on[node_num_to].itv;
     return trust_value;
+}
+
+//信頼値測定を行って悪意のあるノードをフィルタリングする
+void Filtering(ONode on[], Graph &gr)
+{
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            if (i != j)
+            {
+                //直接的なノード信頼値の計算
+                caliculate_and_set_dtv(on, i, j);
+            }
+        }
+    }
+
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = i + 1; j < N; j++)
+        {
+            //間接的なノード信頼値の計算
+            //d-sでエラー出そう
+            if (i != j)
+            {
+                caliculate_indirect_trust_value(on, gr, i, j);
+                //最終的な信頼値測定
+                double tv = cal_get_trust_value(on, i, j);
+                if (tv <= threshold) //信頼値が閾値以下の場合
+                {
+                    RemoveEdgeToMal(gr, j, i);
+                    WhenDetectedAttack(j, i);
+                }
+            }
+        }
+    }
 }
 
 //直接的・間接的な信頼値を0.6で初期化
@@ -381,7 +434,7 @@ void round_set_next()
 
 //キューが空でない場合単純にパケットをドロップ
 //検知したとき
-void WhenDetectedAttack(Node node[], int mal_num, int detect_num)
+void WhenDetectedAttack(int mal_num, int detect_num)
 {
     //まだ登録されていない場合登録する
     if (FindFromMaltable(detect_num, mal_num) == false)
@@ -739,13 +792,15 @@ void SendFromHighestPrior(Node n[], int node_num, Edge num_edge, queue<int> que)
 
 //recvmapの状態を成功に変える
 //変えた上でrecvmapを参照し，100増えたら信頼値関数を呼び出しラウンドを増やす
-void ChangeStatetoSuctoRecvmap(Node n[], int node_num, int packet_num)
+void ChangeStatetoSuctoRecvmap(Graph &gr, Node n[], ONode on[], int node_num, int packet_num)
 {
     n[node_num].recvmap[packet_num] = true;
-    //宛先が100個パケットを受信
-    //考える
-    if (count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == 100)
+    //宛先がpacket_step個パケットを受信したときの処理
+    if (d == node_num && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * send_round)
     {
+        Filtering(on, gr);
+        round_set_next();     //ラウンドを1進める
+        cntint_flush_all(on); //インタラクション数のリセット
     }
 }
 
@@ -897,6 +952,29 @@ void simulate_without_Tv_with_at()
 //単純な性能評価用
 void simulate_without_Tv_without_at()
 {
+}
+
+void simulate_mode()
+{
+    if (mode == 0) //単純な性能評価用
+    {
+        simulate_without_Tv_without_at();
+    }
+    else if (mode == 1) //攻撃のみ
+    {
+        simulate_without_Tv_with_at();
+    }
+    else if (mode == 2) //信頼値測定あり
+    {
+        /* code */
+    }
+    else if (mode == 3) //提案手法あり
+    {
+    }
+    else
+    {
+        cout << "Invalid mode" << endl;
+    }
 }
 
 //送受信マップのセット
@@ -1052,6 +1130,7 @@ int main(void)
     BroadcastFromIntermediatenode(g, node);
     show_map(node);
     show_pdr(node);
+
     //経路情報はvectorで管理
     vector<vector<int>>
         route;
