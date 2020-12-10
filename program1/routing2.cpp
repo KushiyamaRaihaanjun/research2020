@@ -17,11 +17,12 @@ using namespace std;
 typedef long long int lli;
 
 #define INF 1e30
-const int N = 50;        // number of nodes
-const int d = N - 1;     //宛先
-int send_round = 0;      //ラウンド
-const int mx_round = 10; //ラウンドの最大
-int mode = 0;            //実験モード
+const int N = 50;                 // number of nodes
+const int d = N - 1;              //宛先
+int send_round = 0;               //ラウンド
+const int mx_round = 10;          //ラウンドの最大
+const int number_of_malnodes = 1; //悪意のあるノード数
+int mode = 0;                     //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;                     //通信成功率(定数)
 double threshold = 0.5000;                          // 信頼値の閾値
@@ -43,7 +44,7 @@ using Graph = vector<vector<Edge>>;                            //グラフ型
 using P = pair<double, int>;                                   //ETX,ノード番号のペア
 priority_queue<P, vector<P>, greater<P>> pq_onehop_fromsource; //1hopノードの優先度付きキュー
 priority_queue<P, vector<P>, greater<P>> pq_intermediate[N];   //各ノードの優先度付きキュー
-vector<int> attacker_array(N);                                 //攻撃ノードの番号が入った配列(攻撃ノード用)
+vector<int> attacker_array;                                    //攻撃ノードの番号が入った配列(攻撃ノード用)
 vector<vector<int>> malnodes_array;                            //悪意のあるノードを検知したときに使う配列(各ノードが保持)
 vector<vector<double>> trust_value_array;                      //信頼値を格納する配列
 struct Node
@@ -172,6 +173,11 @@ double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to)
     double val2 = 0.0;
     //vector<bool> bitval(gr[node_num].size()); //bitsetの代わりに使いたい,size
     int observer_node_size = gr[node_num_from].size(); //これでOK
+    //どのノードともリンクがなかった場合
+    if (observer_node_size == 0)
+    {
+        return 0.5;
+    }
     //グラフからノード番号を取得する必要がありそう
     //添え字を何とかする
     /*
@@ -239,6 +245,11 @@ double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to)
     //ds_trustと同じ
     map<int, int> setcount;
     int observer_node_size = gr[node_num_from].size();
+    //リンクがない場合1.0を返す
+    if (observer_node_size == 0)
+    {
+        return 1.0;
+    }
     vector<int> nb_nodes(observer_node_size);
     for (auto num_edge : gr[node_num_from])
     {
@@ -285,6 +296,9 @@ double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to)
 //これだとすべてのノードにおいて信頼値が同じになる
 //node_num_from...観察するノード
 //node_num_to...観察されるノード
+//0...送信成功など
+//1...送信失敗など
+//2...？
 void cnt_inter(ONode on[], int node_num_from, int node_num_to, int ev_val) //ev_val...イベント種別
 {
     if (ev_val == 0) //0...送信成功などの動作
@@ -295,11 +309,45 @@ void cnt_inter(ONode on[], int node_num_from, int node_num_to, int ev_val) //ev_
     {
         on[node_num_to].beta[node_num_from][send_round]++;
     }
-    else //重複などはこっちへ
+    else if (ev_val == 2) //重複などはこっちへ
     {
-        on[node_num_to].alpha[node_num_from][send_round]++;
+        on[node_num_to].beta[node_num_from][send_round]--;
     }
 }
+
+//成功に関するインタラクション数を更新する
+void CntSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send)
+{
+    cnt_inter(on, node_num_send, node_num_recv, 0);
+    //周辺ノードについて更新する
+    for (auto edge : gr[node_num_send])
+    {
+        cnt_inter(on, edge.to, node_num_recv, 0);
+    }
+}
+
+//失敗に関するインタラクション数を更新する
+void CntFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send)
+{
+    cnt_inter(on, node_num_send, node_num_recv, 1);
+    //周辺ノードについて更新する
+    for (auto edge : gr[node_num_send])
+    {
+        cnt_inter(on, edge.to, node_num_recv, 1);
+    }
+}
+
+//失敗に関するインタラクション数を減らす
+void DecFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send)
+{
+    cnt_inter(on, node_num_send, node_num_recv, 2);
+    //周辺ノードについて更新する
+    for (auto edge : gr[node_num_send])
+    {
+        cnt_inter(on, edge.to, node_num_recv, 2);
+    }
+}
+
 //インタラクション数をリセット
 //最初にかならず呼び，ラウンドの更新ごとにも呼ぶ
 //node_num_from...観察するノード
@@ -367,7 +415,7 @@ double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to)
 }
 
 //信頼値測定を行って悪意のあるノードをフィルタリングする
-void Filtering(ONode on[], Graph &gr)
+void CalTrust_and_Filtering(ONode on[], Graph &gr)
 {
     for (int i = 0; i < N; i++)
     {
@@ -387,15 +435,17 @@ void Filtering(ONode on[], Graph &gr)
         {
             //間接的なノード信頼値の計算
             //d-sでエラー出そう
-            if (i != j)
+            //i-j間で直接(1ホップの)リンクがあるかを判定する
+            if (i != j && IsLinked(gr, i, j) == true)
             {
+                //itv測定
                 caliculate_indirect_trust_value(on, gr, i, j);
                 //最終的な信頼値測定
                 double tv = cal_get_trust_value(on, i, j);
                 if (tv <= threshold) //信頼値が閾値以下の場合
                 {
-                    RemoveEdgeToMal(gr, j, i);
-                    WhenDetectedAttack(j, i);
+                    RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
+                    RegistTable(j, i);         //まだ登録されていない場合テーブルに登録する
                 }
             }
         }
@@ -434,7 +484,7 @@ void round_set_next()
 
 //キューが空でない場合単純にパケットをドロップ
 //検知したとき
-void WhenDetectedAttack(int mal_num, int detect_num)
+void RegistTable(int mal_num, int detect_num)
 {
     //まだ登録されていない場合登録する
     if (FindFromMaltable(detect_num, mal_num) == false)
@@ -472,18 +522,43 @@ bool FindFromMaltable(int node_num, int key)
     return false;
 }
 
-////攻撃関連///////////
+////攻撃関連///////////////////////////////////////////////////
 
 //攻撃
 void BlackholeAttack(Node node[], int node_num)
 {
-    if (!node[node_num].q.empty())
+    //攻撃ノードならキューからポップする
+    if (!node[node_num].q.empty() && IsRegisteredAt(node_num) == true)
     {
         node[node_num].q.pop();
     }
 }
 
-//////////////////////
+//攻撃ノード指定
+void AttackerSet()
+{
+    attacker_array.resize(number_of_malnodes); //攻撃ノード数に配列をリサイズする
+    //攻撃ノードのノード番号を登録しておく
+    for (int i = 0; i < number_of_malnodes; i++)
+    {
+        attacker_array[i] = i + 1;
+    }
+}
+
+//attackerの中に登録されているか調べる
+bool IsRegisteredAt(int key)
+{
+    for (int i = 0; i < attacker_array.size(); i++)
+    {
+        if (attacker_array[i] == key)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+//////////////////////////////////////////////////////////////////
 
 ////ルーチング関連////
 
@@ -532,12 +607,26 @@ void bfs(const Graph &gr)
     }
 }
 
+//ホップ数を調べる
 int GetMaxHop()
 {
     vector<int> tmphp;
     tmphp = bf_dist;
     sort(tmphp.begin(), tmphp.end());
     return tmphp[tmphp.size() - 1];
+}
+
+//接続性チェック
+bool IsLinked(Graph &gr, int from, int to)
+{
+    for (auto edge : gr[from])
+    {
+        if (edge.to == to)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 //ダイクストラ法
@@ -784,26 +873,47 @@ void SendFromHighestPrior(Node n[], int node_num, Edge num_edge, queue<int> que)
             //to do
             //エッジを調べる
             //失敗をnode_numに通知
-
             //失敗を周辺ノードに通知
         } //end if
     }     //end while
 }
 
+//送信成功時
 //recvmapの状態を成功に変える
-//変えた上でrecvmapを参照し，100増えたら信頼値関数を呼び出しラウンドを増やす
-void ChangeStatetoSuctoRecvmap(Graph &gr, Node n[], ONode on[], int node_num, int packet_num)
+//変えた上でrecvmapを参照し，packet_step個増えたら信頼値関数を呼び出しラウンドを増やす
+void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
 {
-    n[node_num].recvmap[packet_num] = true;
+    //Recv
+    n[node_num_recv].recvmap[packet_num] = true;
     //宛先がpacket_step個パケットを受信したときの処理
-    if (d == node_num && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * send_round)
+    if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * send_round)
     {
-        Filtering(on, gr);
-        round_set_next();     //ラウンドを1進める
-        cntint_flush_all(on); //インタラクション数のリセット
+        CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
+        round_set_next();               //ラウンドを1進める
+        cntint_flush_all(on);           //インタラクション数のリセット
+    }
+    else //そうでない場合インタラクション数を更新する
+    {
+        CntSuc(gr, n, on, node_num_recv, node_num_send);
     }
 }
 
+//失敗時
+void WhenRecvPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
+{
+    //dtv/itvにおける失敗回数を増やす
+    CntFal(gr, n, on, node_num_recv, node_num_send);
+}
+
+//重複時
+//提案手法
+void WhenRecvPacketDup(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
+{
+    //dtv/itvにおける失敗回数を減らす
+    DecFal(gr, n, on, node_num_recv, node_num_send);
+}
+
+//中継ノードからのブロードキャスト
 void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
 {
     //ノードの優先度付けは最初に行った
@@ -936,25 +1046,37 @@ void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
     //}                 //end while
 }
 
-//////シミュレーション・結果処理関連//////
+////////////////////////シミュレーション・結果処理関連//////////////////////////////
 //Input:設定したパラメータ
 //Output:値を関数に渡す？
-//測定ありかつ攻撃あり
-void simulate_with_Tv_with_at()
-{
-}
-//測定なしかつ攻撃あり
-void simulate_without_Tv_with_at()
-{
-    bool f = true;
-}
 
 //単純な性能評価用
 void simulate_without_Tv_without_at()
 {
 }
+//測定なしかつ攻撃あり
+void simulate_without_Tv_with_at()
+{
+    AttackerSet();
+}
+//測定ありかつ攻撃あり
+void simulate_with_Tv_with_at()
+{
+    AttackerSet();
+}
+//提案手法ありかつ攻撃あり
+void simulate_with_Suggest_with_attack()
+{
+    AttackerSet();
+}
 
-void simulate_mode()
+//シミュレーションモードを変更する
+void set_simulate_mode(int m)
+{
+    mode = m;
+}
+//シミュレーションモードに応じたシミュレーションを行う
+void simulate()
 {
     if (mode == 0) //単純な性能評価用
     {
@@ -964,19 +1086,19 @@ void simulate_mode()
     {
         simulate_without_Tv_with_at();
     }
-    else if (mode == 2) //信頼値測定あり
+    else if (mode == 2) //攻撃・信頼値測定あり
     {
-        /* code */
+        simulate_with_Tv_with_at();
     }
     else if (mode == 3) //提案手法あり
     {
+        simulate_with_Suggest_with_attack();
     }
     else
     {
         cout << "Invalid mode" << endl;
     }
 }
-
 //送受信マップのセット
 void set_map(Node node[])
 {
@@ -1022,6 +1144,21 @@ void show_map(Node node[])
         }
         cout << endl;
     }
+}
+
+//malnodes_arrayから検出率を求める
+void get_detect_rate()
+{
+    int cnt_of_detected = 0;
+    for (int i = 0; i < N; i++)
+    {
+        if (malnodes_array[i].size() > 0)
+        {
+            cnt_of_detected += malnodes_array[i].size();
+        }
+    }
+    double detection_rate = (double)(cnt_of_detected / number_of_malnodes);
+    cout << "Detection Rate: " << detection_rate << endl;
 }
 
 //PDRの表示
@@ -1087,23 +1224,20 @@ void edge_set(Graph &gr)
     fill(checked.begin(), checked.end(), false);
 }
 
+//ありうるルートを調べる
 vector<vector<int>> GetAllRoute()
 {
 }
 
-////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////
 
-/////main////////////////////////////
+//////////////////////////////////////////main/////////////////////////////////////////
 int main(void)
 {
     //ノードの位置を入力(あとで？)
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    int number_of_edges = 8;
-    //for (int i = 0; i < numberofedges; i++)
-    //{
-    //}
     //edge_set(g);
     edge_set_from_file(g);
     Node node[N];
@@ -1131,9 +1265,6 @@ int main(void)
     show_map(node);
     show_pdr(node);
 
-    //経路情報はvectorで管理
-    vector<vector<int>>
-        route;
     //シミュレーションを行う
     //simulate();
 
