@@ -790,11 +790,8 @@ void SendFromlessPrior(Node n[], priority_queue<P, vector<P>, greater<P>> tmp_pq
                     if (rnd.randBool(num_edge.tsuccess_rate))
                     {
                         //パケットの重複判定をする
-                        n[node_num].sendmap[que.front()] = true;    //送信マップをtrue
-                        n[num_edge.to].recvmap[que.front()] = true; //受信マップをfalseならtrue
-                        //受信成功時のメッセージ
-                        cout << "Node " << num_edge.to << " received packet " << que.front() << " from Node " << node_num << endl;
-                        n[num_edge.to].q.push(que.front());
+                        n[node_num].sendmap[que.front()] = true; //送信マップをtrue
+                        WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
 
                         //to do
                         //エッジを調べる
@@ -803,9 +800,8 @@ void SendFromlessPrior(Node n[], priority_queue<P, vector<P>, greater<P>> tmp_pq
                     }
                     else //失敗
                     {
-                        n[node_num].sendmap[que.front()] = false;     //送信マップをfalse
-                        n[num_edge.to].recvmap[que.front()] |= false; //受信マップをfalse
-                        cout << "Node " << num_edge.to << " dropped packet " << que.front() << " ((from Node " << node_num << endl;
+                        n[node_num].sendmap[que.front()] = false; //送信マップをfalse
+                        WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
                         //to do
                         //エッジを調べる
                         //失敗をnode_numに通知
@@ -815,11 +811,21 @@ void SendFromlessPrior(Node n[], priority_queue<P, vector<P>, greater<P>> tmp_pq
                 else //重複を避けるためパケットをドロップ
                 {
                     cout << "Node " << node_num << " Drop packet " << que.front() << " to prevent duplicate (to Node" << num_edge.to << endl;
+                    WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
+                    if (mode == 3) //提案手法あり
+                    {
+                        WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, que.front());
+                    }
                 }
             } //すでに優先度の高いノードが送信している場合
             else
             {
                 cout << "Node " << node_num << " Drop packet " << que.front() << " to prevent duplicate (to Node" << num_edge.to << endl;
+                WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
+                if (mode == 3) //提案手法あり
+                {
+                    WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, que.front());
+                }
             }
             que.pop();
             tmp2_pq_onehop_fromsource.pop(); //パケットについての処理終なのでノード番号を更新する
@@ -847,16 +853,25 @@ void SendFromHighestPrior(Node n[], int node_num, Edge num_edge, queue<int> que)
             //パケットの重複判定をする
             if (n[num_edge.to].recvmap[que.front()] == false) //まだキューの先頭のパケットを受信していない場合
             {
-                n[node_num].sendmap[que.front()] = true;    //送信マップをtrue
-                n[num_edge.to].recvmap[que.front()] = true; //受信マップをfalseならtrue
-                //受信成功時のメッセージ
-                cout << "Node " << num_edge.to << " received packet " << que.front() << " from Node " << node_num << endl;
-                n[num_edge.to].q.push(que.front());
+                n[node_num].sendmap[que.front()] = true; //送信マップをtrue
+                //受信時処理をWhenRecvに移動した
+                WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
+                if (mode >= 1) //攻撃ありの場合
+                {
+
+                    BlackholeAttack(n, node_num);
+                }
             }
             else
             {
                 //重複時のメッセージ
                 cout << "Node " << num_edge.to << " ignoring packet " << que.front() << " due to duplicate" << endl;
+                //SendFromlessに書く
+                WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
+                if (mode == 3) //提案手法あり
+                {
+                    WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, que.front());
+                }
             }
             que.pop();
             //to do
@@ -866,9 +881,9 @@ void SendFromHighestPrior(Node n[], int node_num, Edge num_edge, queue<int> que)
         }
         else
         {
-            n[node_num].sendmap[que.front()] = false;     //送信マップをfalse
-            n[num_edge.to].recvmap[que.front()] |= false; //受信マップをfalse
-            cout << "Node " << num_edge.to << " dropped packet " << que.front() << " ((from Node " << node_num << endl;
+            n[node_num].sendmap[que.front()] = false; //送信マップをfalse
+            //受信失敗時処理をRecvpacketFalに移動
+            WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
             que.pop();
             //to do
             //エッジを調べる
@@ -884,23 +899,32 @@ void SendFromHighestPrior(Node n[], int node_num, Edge num_edge, queue<int> que)
 void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
 {
     //Recv
-    n[node_num_recv].recvmap[packet_num] = true;
+    n[node_num_recv].recvmap[packet_num] = true; //受信マップをfalseならtrue
+    //受信成功時のメッセージ
+    cout << "Node " << node_num_recv << " received packet " << packet_num << " from Node " << node_num_send << endl;
+    n[node_num_recv].q.push(packet_num);
+
     //宛先がpacket_step個パケットを受信したときの処理
-    if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * send_round)
+    if (mode >= 2) //信頼値測定を行うかをモードで分岐する
     {
-        CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
-        round_set_next();               //ラウンドを1進める
-        cntint_flush_all(on);           //インタラクション数のリセット
-    }
-    else //そうでない場合インタラクション数を更新する
-    {
-        CntSuc(gr, n, on, node_num_recv, node_num_send);
+        if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * send_round)
+        {
+            CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
+            round_set_next();               //ラウンドを1進める
+            cntint_flush_all(on);           //インタラクション数のリセット
+        }
+        else //そうでない場合インタラクション数を更新する
+        {
+            CntSuc(gr, n, on, node_num_recv, node_num_send);
+        }
     }
 }
 
 //失敗時
 void WhenRecvPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
 {
+    n[node_num_recv].recvmap[packet_num] |= false; //受信マップをfalse
+    cout << "Node " << node_num_recv << " dropped packet " << packet_num << " ((from Node " << node_num_send << endl;
     //dtv/itvにおける失敗回数を増やす
     CntFal(gr, n, on, node_num_recv, node_num_send);
 }
