@@ -1,5 +1,7 @@
 //From 2020-12-5
 //信頼値測定を加えたバージョン2
+//From 2020-12-11
+//ファイル分割:ver3
 #include <stdio.h>
 #include <math.h>
 #include <iostream>

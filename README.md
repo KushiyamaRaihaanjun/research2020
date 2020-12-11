@@ -112,6 +112,8 @@ ORの実装・信頼値測定についてのメモ
     - あらかじめ計算しておく
 - BFS
     - hop数を取得するのに用いる
+- routing1からの変更
+    - SendlessとSendHighestを変更
 ## 実装に関するTo do とメモ
 - To do(12/8)
     <!--
