@@ -17,7 +17,7 @@ using namespace std;
 typedef long long int lli;
 
 #define INF 1e30
-const int N = 50;                 // number of nodes
+const int N = 7;                  // number of nodes
 const int d = N - 1;              //宛先
 int send_round = 0;               //ラウンド
 const int mx_round = 10;          //ラウンドの最大
@@ -27,7 +27,7 @@ int mode = 0;                     //実験モード
 double constant_suc_rate = 0.8;                     //通信成功率(定数)
 double threshold = 0.5000;                          // 信頼値の閾値
 double theta = 0.5;                                 //直接的な信頼値の重み
-const int packet_step = 100;                        //ラウンドで送信するパケット数
+const int packet_step = 10;                         //ラウンドで送信するパケット数
 const int numberofpackets = packet_step * mx_round; //送信するパケット数
 double tmpetx = 0.0;                                //etx計算用
 vector<bool> seen;                                  // 到達可能かどうかを調べる
@@ -45,7 +45,7 @@ using P = pair<double, int>;                                   //ETX,ノード�
 priority_queue<P, vector<P>, greater<P>> pq_onehop_fromsource; //1hopノードの優先度付きキュー
 priority_queue<P, vector<P>, greater<P>> pq_intermediate[N];   //各ノードの優先度付きキュー
 vector<int> attacker_array;                                    //攻撃ノードの番号が入った配列(攻撃ノード用)
-vector<vector<int>> malnodes_array;                            //悪意のあるノードを検知したときに使う配列(各ノードが保持)
+vector<vector<int>> malnodes_array(N);                         //悪意のあるノードを検知したときに使う配列(各ノードが保持)
 vector<vector<double>> trust_value_array;                      //信頼値を格納する配列
 struct Node
 {
@@ -142,6 +142,60 @@ struct ONode
     }
 };
 
+/*プロトタイプ宣言*/
+void num_to_three(int x);
+void num_to_bin(int x);
+double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to);
+double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to);
+void cnt_inter(ONode on[], int node_num_from, int node_num_to, int ev_val);
+void CntSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
+void CntFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
+void DecFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
+void DecFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
+void cntint_flush(ONode on[], int node_num_from, int node_num_to);
+void cntint_flush_all(ONode on[]);
+void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to);
+void caliculate_indirect_trust_value(ONode on[], const Graph &g, int node_num_from, int node_num_to);
+double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to);
+void CalTrust_and_Filtering(ONode on[], Graph &gr);
+void init_itv(ONode n[], int node_num_to);
+void init_dtv(ONode n[], int node_num_from, int node_num_to);
+void round_set_next();
+void RegistTable(int mal_num, int detect_num);
+void RemoveEdgeToMal(Graph &gr, int mal_edge, int detect_num);
+bool FindFromMaltable(int node_num, int key);
+void BlackholeAttack(Node node[], int node_num);
+void AttackerSet();
+bool IsRegisteredAt(int key);
+void dfs(const Graph &gr, int ver);
+void bfs(const Graph &gr);
+int GetMaxHop();
+bool IsLinked(Graph &gr, int from, int to);
+void dijkstra_etx(const Graph &gr, int s, vector<double> &dis);
+void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst);
+void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst);
+void BroadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst);
+void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource, int node_num, Edge num_edge, queue<int> que);
+void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge num_edge, queue<int> que);
+void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
+void WhenRecvPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
+void WhenRecvPacketDup(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
+void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[]);
+void simulate_without_Tv_without_at();
+void simulate_without_Tv_with_at();
+void simulate_with_Tv_with_at();
+void simulate_with_Suggest_with_attack();
+void set_simulate_mode(int m);
+void simulate();
+void set_map(Node node[]);
+void show_map(Node node[]);
+void get_detect_rate();
+void show_pdr(Node node[]);
+void simulate_end();
+void edge_set_from_file(Graph &gr);
+void edge_set(Graph &gr);
+vector<vector<int>> GetAllRoute();
+/* end */
 //三進法変換
 int threearray[18];
 void num_to_three(int x)
@@ -444,8 +498,9 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
                 double tv = cal_get_trust_value(on, i, j);
                 if (tv <= threshold) //信頼値が閾値以下の場合
                 {
-                    RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
-                    RegistTable(j, i);         //まだ登録されていない場合テーブルに登録する
+                    //constを変更しようとしている
+                    //RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
+                    RegistTable(j, i); //まだ登録されていない場合テーブルに登録する
                 }
             }
         }
@@ -494,18 +549,18 @@ void RegistTable(int mal_num, int detect_num)
 }
 
 //悪意ノードのリンクを除去
-void RemoveEdgeToMal(Graph &gr, int mal_edge, int detect_num)
-{
-    //mal_edgeの要素を削除
-    //普通1本だからforじゃなくて良いかも
-    for (auto edge : gr[detect_num])
-    {
-        if (edge.to == mal_edge)
-        {
-            gr[detect_num].erase(remove(gr[detect_num].begin(), gr[detect_num].end(), edge), gr[detect_num].end());
-        }
-    }
-}
+//void RemoveEdgeToMal(Graph &gr, int mal_edge, int detect_num)
+//{
+//    //mal_edgeの要素を削除
+//    //普通1本だからforじゃなくて良いかも
+//    for (auto edge : gr[detect_num])
+//    {
+//        if (edge.to == mal_edge)
+//        {
+//            gr[detect_num].erase(remove(gr[detect_num].begin(), gr[detect_num].end(), edge), gr[detect_num].end());
+//        }
+//    }
+//}
 
 //登録した攻撃ノードを検索
 bool FindFromMaltable(int node_num, int key)
@@ -541,7 +596,7 @@ void AttackerSet()
     //攻撃ノードのノード番号を登録しておく
     for (int i = 0; i < number_of_malnodes; i++)
     {
-        attacker_array[i] = i + 1;
+        attacker_array[i] = 5;
     }
 }
 
@@ -748,6 +803,11 @@ void BroadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst
                 n[num_edge.to].recvmap[p] = true; //toのrecvmapを更新
                 n[num_edge.to].q.push(p);         //toのキューにパケットをプッシュ
                 cout << "Node " << num_edge.to << " received packet " << p << " from Node " << node_num << endl;
+                //ブラックホール攻撃
+                if (mode >= 1)
+                {
+                    BlackholeAttack(n, num_edge.to); //追加
+                }
             }
             else //失敗処理
             {
@@ -1077,7 +1137,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
 //Input:設定したパラメータ
 //Output:値を関数に渡す？
 
-//単純な性能評価用
+//単純な性能評価用...0
 void simulate_without_Tv_without_at()
 {
     //ノードの位置を入力(あとで？)
@@ -1112,7 +1172,7 @@ void simulate_without_Tv_without_at()
     show_pdr(node);
 }
 
-//測定なしかつ攻撃あり
+//測定なしかつ攻撃あり...1
 void simulate_without_Tv_with_at()
 {
     //ノードの位置を入力(あとで？)
@@ -1147,7 +1207,7 @@ void simulate_without_Tv_with_at()
     show_map(node);
     show_pdr(node);
 }
-//測定ありかつ攻撃あり
+//測定ありかつ攻撃あり...2
 void simulate_with_Tv_with_at()
 {
     //ノードの位置を入力(あとで？)
@@ -1181,8 +1241,9 @@ void simulate_with_Tv_with_at()
     BroadcastFromIntermediatenode(g, node, obs_node);
     show_map(node);
     show_pdr(node);
+    get_detect_rate();
 }
-//提案手法ありかつ攻撃あり
+//提案手法ありかつ攻撃あり...3
 void simulate_with_Suggest_with_attack()
 {
     //ノードの位置を入力(あとで？)
@@ -1216,6 +1277,7 @@ void simulate_with_Suggest_with_attack()
     BroadcastFromIntermediatenode(g, node, obs_node);
     show_map(node);
     show_pdr(node);
+    get_detect_rate();
 }
 
 //シミュレーションモードを変更する
@@ -1326,7 +1388,7 @@ void simulate_end()
 void edge_set_from_file(Graph &gr)
 {
     //ファイルから読み込む形に変更する
-    ifstream ifs("topology.txt", ios::in);
+    ifstream ifs("topology4.txt", ios::in);
     if (!ifs)
     {
         cerr << "Error: file not opened" << endl;
@@ -1365,7 +1427,7 @@ void edge_set(Graph &gr)
     gr[2].push_back(Edge(5, 0.8));
     gr[3].push_back(Edge(4, 0.8));
     gr[3].push_back(Edge(5, 0.8));
-    gr[4].push_back(Edge(6, 0.9));
+    gr[4].push_back(Edge(6, 0.8));
     gr[5].push_back(Edge(6, 0.8));
     checked.resize(gr[0].size());
     //送信元から1hopをチェックしたかどうか
@@ -1373,16 +1435,20 @@ void edge_set(Graph &gr)
 }
 
 //ありうるルートを調べる
-vector<vector<int>> GetAllRoute()
-{
-}
+//vector<vector<int>> GetAllRoute()
+//{
+//}
 
 ///////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////main/////////////////////////////////////////
 int main(void)
 {
-    set_simulate_mode(0);
+    //0...単純な性能評価用
+    //1...攻撃のみ
+    //2...攻撃・信頼値測定あり
+    //3...提案手法
+    set_simulate_mode(2);
     simulate();
     return 0;
 }
