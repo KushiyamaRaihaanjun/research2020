@@ -1053,21 +1053,142 @@ void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
 //単純な性能評価用
 void simulate_without_Tv_without_at()
 {
+    //ノードの位置を入力(あとで？)
+    //ひとまずは考えない（手動でノードを接続）
+    //接続情報を入力
+    Graph g(N);
+    //edge_set(g);
+    edge_set_from_file(g);
+    Node node[N];
+    ONode obs_node[N];
+    //攻撃ノードの情報を追加
+    //パケットはuID指定
+    set_map(node);
+    seen.assign(N, false);
+    Decidepriorityfromsource(g, node, 0, d);
+    bfs(g); //幅優先探索によりホップ数計算
+    for (int i = 0; i < numberofpackets; i++)
+    {
+        BroadcastFromSource(g, node, 0, i, d);
+    }
+    //中継ノードの優先度を決定
+    //各priorityqueueに優先度を入れている？
+    //優先度決定を幅優先探索で求めたHop数ごとに行う
+    //最大ホップ数を取得
+    int mxhop = GetMaxHop();
+    for (int i = 1; i < mxhop; i++)
+    {
+        DecidePriorityIntermediate(g, node, i, d);
+    }
+    BroadcastFromIntermediatenode(g, node);
+    show_map(node);
+    show_pdr(node);
 }
+
 //測定なしかつ攻撃あり
 void simulate_without_Tv_with_at()
 {
-    AttackerSet();
+    //ノードの位置を入力(あとで？)
+    //ひとまずは考えない（手動でノードを接続）
+    //接続情報を入力
+    Graph g(N);
+    //edge_set(g);
+    edge_set_from_file(g);
+    Node node[N];
+    ONode obs_node[N];
+    //攻撃ノードの情報を追加
+    //パケットはuID指定
+    set_map(node);
+    AttackerSet(); //攻撃ノード指定
+    seen.assign(N, false);
+    Decidepriorityfromsource(g, node, 0, d);
+    bfs(g); //幅優先探索によりホップ数計算
+    for (int i = 0; i < numberofpackets; i++)
+    {
+        BroadcastFromSource(g, node, 0, i, d);
+    }
+    //中継ノードの優先度を決定
+    //各priorityqueueに優先度を入れている？
+    //優先度決定を幅優先探索で求めたHop数ごとに行う
+    //最大ホップ数を取得
+    int mxhop = GetMaxHop();
+    for (int i = 1; i < mxhop; i++)
+    {
+        DecidePriorityIntermediate(g, node, i, d);
+    }
+    BroadcastFromIntermediatenode(g, node);
+    show_map(node);
+    show_pdr(node);
 }
 //測定ありかつ攻撃あり
 void simulate_with_Tv_with_at()
 {
-    AttackerSet();
+    //ノードの位置を入力(あとで？)
+    //ひとまずは考えない（手動でノードを接続）
+    //接続情報を入力
+    Graph g(N);
+    //edge_set(g);
+    edge_set_from_file(g);
+    Node node[N];
+    ONode obs_node[N];
+    //攻撃ノードの情報を追加
+    //パケットはuID指定
+    set_map(node);
+    AttackerSet(); //攻撃ノード指定
+    seen.assign(N, false);
+    Decidepriorityfromsource(g, node, 0, d);
+    bfs(g); //幅優先探索によりホップ数計算
+    for (int i = 0; i < numberofpackets; i++)
+    {
+        BroadcastFromSource(g, node, 0, i, d);
+    }
+    //中継ノードの優先度を決定
+    //各priorityqueueに優先度を入れている？
+    //優先度決定を幅優先探索で求めたHop数ごとに行う
+    //最大ホップ数を取得
+    int mxhop = GetMaxHop();
+    for (int i = 1; i < mxhop; i++)
+    {
+        DecidePriorityIntermediate(g, node, i, d);
+    }
+    BroadcastFromIntermediatenode(g, node);
+    show_map(node);
+    show_pdr(node);
 }
 //提案手法ありかつ攻撃あり
 void simulate_with_Suggest_with_attack()
 {
-    AttackerSet();
+    //ノードの位置を入力(あとで？)
+    //ひとまずは考えない（手動でノードを接続）
+    //接続情報を入力
+    Graph g(N);
+    //edge_set(g);
+    edge_set_from_file(g);
+    Node node[N];
+    ONode obs_node[N];
+    //攻撃ノードの情報を追加
+    //パケットはuID指定
+    set_map(node);
+    AttackerSet(); //攻撃ノード指定
+    seen.assign(N, false);
+    Decidepriorityfromsource(g, node, 0, d);
+    bfs(g); //幅優先探索によりホップ数計算
+    for (int i = 0; i < numberofpackets; i++)
+    {
+        BroadcastFromSource(g, node, 0, i, d);
+    }
+    //中継ノードの優先度を決定
+    //各priorityqueueに優先度を入れている？
+    //優先度決定を幅優先探索で求めたHop数ごとに行う
+    //最大ホップ数を取得
+    int mxhop = GetMaxHop();
+    for (int i = 1; i < mxhop; i++)
+    {
+        DecidePriorityIntermediate(g, node, i, d);
+    }
+    BroadcastFromIntermediatenode(g, node);
+    show_map(node);
+    show_pdr(node);
 }
 
 //シミュレーションモードを変更する
@@ -1234,42 +1355,7 @@ vector<vector<int>> GetAllRoute()
 //////////////////////////////////////////main/////////////////////////////////////////
 int main(void)
 {
-    //ノードの位置を入力(あとで？)
-    //ひとまずは考えない（手動でノードを接続）
-    //接続情報を入力
-    Graph g(N);
-    //edge_set(g);
-    edge_set_from_file(g);
-    Node node[N];
-    ONode obs_node[N];
-    //攻撃ノードの情報を追加
-    //パケットはuID指定
-    set_map(node);
-    seen.assign(N, false);
-    Decidepriorityfromsource(g, node, 0, d);
-    bfs(g); //幅優先探索によりホップ数計算
-    for (int i = 0; i < numberofpackets; i++)
-    {
-        BroadcastFromSource(g, node, 0, i, d);
-    }
-    //中継ノードの優先度を決定
-    //各priorityqueueに優先度を入れている？
-    //優先度決定を幅優先探索で求めたHop数ごとに行う
-    //最大ホップ数を取得
-    int mxhop = GetMaxHop();
-    for (int i = 1; i < mxhop; i++)
-    {
-        DecidePriorityIntermediate(g, node, i, d);
-    }
-    BroadcastFromIntermediatenode(g, node);
-    show_map(node);
-    show_pdr(node);
-
-    //シミュレーションを行う
-    //simulate();
-
-    //終了処理
-    //simulate_end();
-
+    set_simulate_mode(0);
+    simulate();
     return 0;
 }
