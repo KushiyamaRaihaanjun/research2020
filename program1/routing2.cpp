@@ -769,7 +769,7 @@ void BroadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst
 //num_edge : 送信先を取得
 //tmp_pq_onehop... 自分より優先度が高いノードの番号を取得する
 
-void SendFromlessPrior(Node n[], priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource, int node_num, Edge num_edge, queue<int> que)
+void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource, int node_num, Edge num_edge, queue<int> que)
 {
     priority_queue<P, vector<P>, greater<P>> tmp2_pq_onehop_fromsource = tmp_pq_onehop_fromsource;
     while (!que.empty())
@@ -792,7 +792,10 @@ void SendFromlessPrior(Node n[], priority_queue<P, vector<P>, greater<P>> tmp_pq
                         //パケットの重複判定をする
                         n[node_num].sendmap[que.front()] = true; //送信マップをtrue
                         WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
-
+                        if (mode >= 1) //攻撃ありの場合
+                        {
+                            BlackholeAttack(n, node_num);
+                        }
                         //to do
                         //エッジを調べる
                         //成功or重複をnode_numに通知
@@ -843,7 +846,7 @@ void SendFromlessPrior(Node n[], priority_queue<P, vector<P>, greater<P>> tmp_pq
 //node_num...送信元
 //num_edge.to...宛先
 //優先度が高いノードからの送信
-void SendFromHighestPrior(Node n[], int node_num, Edge num_edge, queue<int> que)
+void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge num_edge, queue<int> que)
 {
 
     while (!que.empty())
@@ -938,7 +941,7 @@ void WhenRecvPacketDup(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
 }
 
 //中継ノードからのブロードキャスト
-void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
+void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
 {
     //ノードの優先度付けは最初に行った
     //宛先までのETXを計算する
@@ -971,12 +974,12 @@ void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
                 if (node_num != highest)        //もっとも優先度の高いノードでない場合
                 {
                     //優先度がより低い場合
-                    SendFromlessPrior(n, tmp_pq_onehop_fromsource, node_num, num_edge, n[node_num].q);
+                    SendFromlessPrior(gr, n, on, tmp_pq_onehop_fromsource, node_num, num_edge, n[node_num].q);
                 }
                 else //最も優先度が高い場合
                 {
                     //優先度が高いノードから送信
-                    SendFromHighestPrior(n, node_num, num_edge, n[node_num].q);
+                    SendFromHighestPrior(gr, n, on, node_num, num_edge, n[node_num].q);
                 }                    //end if
                 n[node_num].q = tmp; //退避していたキューの中身をもとに戻す
             }                        //end for
@@ -1046,12 +1049,12 @@ void BroadcastFromIntermediatenode(const Graph &gr, Node n[])
                 if (node_num_sev != highest_sev)    //もっとも優先度の高いノードでない場合
                 {
                     //優先度がより低い場合
-                    SendFromlessPrior(n, tmp_pq_intermediate, node_num_sev, num_edge, n[node_num_sev].q);
+                    SendFromlessPrior(gr, n, on, tmp_pq_intermediate, node_num_sev, num_edge, n[node_num_sev].q);
                 }
                 else //最も優先度が高い場合
                 {
                     //優先度が高いノードから送信
-                    SendFromHighestPrior(n, node_num_sev, num_edge, n[node_num_sev].q);
+                    SendFromHighestPrior(gr, n, on, node_num_sev, num_edge, n[node_num_sev].q);
                 }                        //end if
                 n[node_num_sev].q = tmp; //退避していたキューの中身をもとに戻す
             }
@@ -1104,7 +1107,7 @@ void simulate_without_Tv_without_at()
     {
         DecidePriorityIntermediate(g, node, i, d);
     }
-    BroadcastFromIntermediatenode(g, node);
+    BroadcastFromIntermediatenode(g, node, obs_node);
     show_map(node);
     show_pdr(node);
 }
@@ -1140,7 +1143,7 @@ void simulate_without_Tv_with_at()
     {
         DecidePriorityIntermediate(g, node, i, d);
     }
-    BroadcastFromIntermediatenode(g, node);
+    BroadcastFromIntermediatenode(g, node, obs_node);
     show_map(node);
     show_pdr(node);
 }
@@ -1175,7 +1178,7 @@ void simulate_with_Tv_with_at()
     {
         DecidePriorityIntermediate(g, node, i, d);
     }
-    BroadcastFromIntermediatenode(g, node);
+    BroadcastFromIntermediatenode(g, node, obs_node);
     show_map(node);
     show_pdr(node);
 }
@@ -1210,7 +1213,7 @@ void simulate_with_Suggest_with_attack()
     {
         DecidePriorityIntermediate(g, node, i, d);
     }
-    BroadcastFromIntermediatenode(g, node);
+    BroadcastFromIntermediatenode(g, node, obs_node);
     show_map(node);
     show_pdr(node);
 }
