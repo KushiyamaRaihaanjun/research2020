@@ -84,8 +84,13 @@ struct ONode
     2(untrustee)
     3(uncertain)*/
     //double dtv[1000];
-    vector<double> dtv;
+    vector<double> dtv; //サイズを決めてないとセグメンテーションフォルトになる(vector)
     double itv;
+    //dtv配列をリサイズする
+    void arrayresize()
+    {
+        dtv.resize(N);
+    }
     //set_itv : 観察ノードの間接的な信頼値をセットする
     void set_itv_rel(ONode on[], const Graph &gr, int node_num_from, int node_num_to)
     {
@@ -160,6 +165,7 @@ double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to);
 void CalTrust_and_Filtering(ONode on[], Graph &gr);
 void init_itv(ONode n[], int node_num_to);
 void init_dtv(ONode n[], int node_num_from, int node_num_to);
+void array_ONodeinit(ONode on[]);
 void round_set_next();
 void RegistTable(int mal_num, int detect_num);
 void RemoveEdgeToMal(Graph &gr, int mal_edge, int detect_num);
@@ -516,6 +522,15 @@ void init_itv(ONode n[], int node_num_to)
 void init_dtv(ONode n[], int node_num_from, int node_num_to)
 {
     n[node_num_to].dtv[node_num_from] = 0.6;
+}
+
+//ONodeのdtv配列をリセットする
+void array_ONodeinit(ONode on[])
+{
+    for (int i = 0; i < N; i++)
+    {
+        on[i].arrayresize();
+    }
 }
 //信頼値の更新をラウンドごとに行う関数を書く
 //配列に格納しておく
@@ -1188,8 +1203,9 @@ void simulate_without_Tv_with_at()
     //攻撃ノードの情報を追加
     //パケットはuID指定
     set_map(node);
-    AttackerSet(); //攻撃ノード指定
-    cntint_flush_all(obs_node);
+    AttackerSet();             //攻撃ノード指定
+    array_ONodeinit(obs_node); //ONodeのdtv配列をリサイズする
+    //cntint_flush_all(obs_node); //インタラクション数をリセット
     seen.assign(N, false);
     Decidepriorityfromsource(g, node, 0, d);
     bfs(g); //幅優先探索によりホップ数計算
@@ -1224,8 +1240,9 @@ void simulate_with_Tv_with_at()
     //攻撃ノードの情報を追加
     //パケットはuID指定
     set_map(node);
-    AttackerSet(); //攻撃ノード指定
-    cntint_flush_all(obs_node);
+    AttackerSet();              //攻撃ノード指定
+    array_ONodeinit(obs_node);  //ONodeのdtv配列をリサイズする
+    cntint_flush_all(obs_node); //インタラクション数をリセット
     seen.assign(N, false);
     Decidepriorityfromsource(g, node, 0, d);
     bfs(g); //幅優先探索によりホップ数計算
@@ -1261,8 +1278,9 @@ void simulate_with_Suggest_with_attack()
     //攻撃ノードの情報を追加
     //パケットはuID指定
     set_map(node);
-    AttackerSet(); //攻撃ノード指定
-    cntint_flush_all(obs_node);
+    AttackerSet();              //攻撃ノード指定
+    array_ONodeinit(obs_node);  //ONodeのdtv配列をリサイズする
+    cntint_flush_all(obs_node); //インタラクション数をリセット
     seen.assign(N, false);
     Decidepriorityfromsource(g, node, 0, d);
     bfs(g); //幅優先探索によりホップ数計算
