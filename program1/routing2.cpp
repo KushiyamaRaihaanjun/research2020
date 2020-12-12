@@ -54,8 +54,8 @@ struct Node
 
     //x,y...座標
     double x, y;
-    uint32_t alpha;
-    uint32_t beta;
+    int alpha;
+    int beta;
     bool sendmap[numberofpackets];
     bool recvmap[numberofpackets];
     queue<int> q;
@@ -75,8 +75,8 @@ struct ONode
 {
     //alpha...number of packets successfully received
     //beta .. all of packets transmitted
-    uint32_t alpha[1000][mx_round];
-    uint32_t beta[1000][mx_round];
+    int alpha[1000][mx_round];
+    int beta[1000][mx_round];
     double dsarray[1000][4]; //D-S理論計算
     int state;
     /*0(emptyset)
@@ -442,7 +442,7 @@ void cntint_flush_all(ONode on[]) //, Graph &gr)
 //dtvにはラウンドがあることに注意
 void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to) //, const Graph &gr)
 {
-    uint32_t all_val = on[node_num_to].alpha[node_num_from][send_round] + on[node_num_to].beta[node_num_from][send_round];
+    int all_val = on[node_num_to].alpha[node_num_from][send_round] + on[node_num_to].beta[node_num_from][send_round];
     //n[node_num].dtv
     //リンクのあるエッジを取得
     on[node_num_to].dtv[node_num_from] = (double)(on[node_num_to].alpha[node_num_from][send_round] / all_val);
