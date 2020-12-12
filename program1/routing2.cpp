@@ -822,6 +822,7 @@ void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, i
                 //ブラックホール攻撃ありの場合
                 if (mode >= 1)
                 {
+                    //num_edge.to が攻撃ノードであれば，攻撃が行われる
                     BlackholeAttack(n, num_edge.to); //追加
                 }
             }
