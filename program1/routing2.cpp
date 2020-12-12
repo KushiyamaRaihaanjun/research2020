@@ -25,7 +25,7 @@ const int number_of_malnodes = 1; //悪意のあるノード数
 int mode = 0;                     //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;                     //通信成功率(定数)
-double threshold = 0.5000;                          // 信頼値の閾値
+double threshold = 0.6000;                          // 信頼値の閾値
 double theta = 0.5;                                 //直接的な信頼値の重み
 const int packet_step = 10;                         //ラウンドで送信するパケット数
 const int numberofpackets = packet_step * mx_round; //送信するパケット数
@@ -819,11 +819,17 @@ void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, i
                 //n[num_edge.to].q.push(p);         //toのキューにパケットをプッシュ
                 WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, p);
                 cout << "Node " << num_edge.to << " received packet " << p << " from Node " << node_num << endl;
-                //ブラックホール攻撃ありの場合
-                if (mode >= 1)
+                //ブラックホール攻撃のみの場合
+                if (mode == 1)
                 {
                     //num_edge.to が攻撃ノードであれば，攻撃が行われる
                     BlackholeAttack(n, num_edge.to); //追加
+                }
+                else if (mode >= 2) //ブラックホール攻撃・信頼値測定/提案手法
+                {
+                    BlackholeAttack(n, num_edge.to);
+                    WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, p);
+                    //周辺ノードについてもカウントする(to do)
                 }
             }
             else //失敗処理
@@ -870,9 +876,17 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
                         //パケットの重複判定をする
                         n[node_num].sendmap[que.front()] = true; //送信マップをtrue
                         WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
-                        if (mode >= 1) //攻撃ありの場合
+                        if (mode == 1)
                         {
-                            BlackholeAttack(n, node_num);
+                            //num_edge.to が攻撃ノードであれば，攻撃が行われる
+                            BlackholeAttack(n, num_edge.to); //追加
+                        }
+                        else if (mode >= 2) //ブラックホール攻撃・信頼値測定/提案手法
+                        {
+                            BlackholeAttack(n, num_edge.to);
+                            //?
+                            WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
+                            //周辺ノードについてもカウントする(to do)
                         }
                         //to do
                         //エッジを調べる
@@ -937,10 +951,16 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
                 n[node_num].sendmap[que.front()] = true; //送信マップをtrue
                 //受信時処理をWhenRecvに移動した
                 WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
-                if (mode >= 1) //攻撃ありの場合
+                if (mode == 1)
                 {
-
-                    BlackholeAttack(n, node_num);
+                    //num_edge.to が攻撃ノードであれば，攻撃が行われる
+                    BlackholeAttack(n, num_edge.to); //追加
+                }
+                else if (mode >= 2) //ブラックホール攻撃・信頼値測定/提案手法
+                {
+                    BlackholeAttack(n, num_edge.to);
+                    WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
+                    //周辺ノードについてもカウントする(to do)
                 }
             }
             else
