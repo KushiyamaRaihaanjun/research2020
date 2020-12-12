@@ -174,7 +174,7 @@ bool IsLinked(Graph &gr, int from, int to);
 void dijkstra_etx(const Graph &gr, int s, vector<double> &dis);
 void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst);
 void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst);
-void BroadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst);
+void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, int dst);
 void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource, int node_num, Edge num_edge, queue<int> que);
 void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge num_edge, queue<int> que);
 void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
@@ -784,7 +784,7 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
 
 //node_num:送信元
 //num_edge.to:宛先
-void BroadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst)
+void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, int dst)
 {
     //ブロードキャスト操作
     //edgeのあるノードにブロードキャストする
@@ -800,10 +800,11 @@ void BroadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst
             if (rnd.randBool(num_edge.tsuccess_rate))
             {
                 n[node_num].sendmap[p] = true;
-                n[num_edge.to].recvmap[p] = true; //toのrecvmapを更新
-                n[num_edge.to].q.push(p);         //toのキューにパケットをプッシュ
+                //n[num_edge.to].recvmap[p] = true; //toのrecvmapを更新
+                //n[num_edge.to].q.push(p);         //toのキューにパケットをプッシュ
+                WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, p);
                 cout << "Node " << num_edge.to << " received packet " << p << " from Node " << node_num << endl;
-                //ブラックホール攻撃
+                //ブラックホール攻撃ありの場合
                 if (mode >= 1)
                 {
                     BlackholeAttack(n, num_edge.to); //追加
@@ -811,8 +812,9 @@ void BroadcastFromSource(const Graph &gr, Node n[], int node_num, int p, int dst
             }
             else //失敗処理
             {
-                n[node_num].sendmap[p] |= false;   //orにする
-                n[num_edge.to].recvmap[p] = false; //
+                n[node_num].sendmap[p] |= false; //orにする
+                //n[num_edge.to].recvmap[p] = false; //
+                WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, p);
                 cout << "Node " << num_edge.to << " dropped packet " << p << " ((from  Node " << node_num << endl;
             }
             //cout << num_edge.to << " ";
@@ -970,7 +972,7 @@ void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     //宛先がpacket_step個パケットを受信したときの処理
     if (mode >= 2) //信頼値測定を行うかをモードで分岐する
     {
-        if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * send_round)
+        if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * (send_round + 1))
         {
             CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
             round_set_next();               //ラウンドを1進める
@@ -1156,7 +1158,7 @@ void simulate_without_Tv_without_at()
     bfs(g); //幅優先探索によりホップ数計算
     for (int i = 0; i < numberofpackets; i++)
     {
-        BroadcastFromSource(g, node, 0, i, d);
+        BroadcastFromSource(g, node, obs_node, 0, i, d);
     }
     //中継ノードの優先度を決定
     //各priorityqueueに優先度を入れている？
@@ -1187,12 +1189,13 @@ void simulate_without_Tv_with_at()
     //パケットはuID指定
     set_map(node);
     AttackerSet(); //攻撃ノード指定
+    cntint_flush_all(obs_node);
     seen.assign(N, false);
     Decidepriorityfromsource(g, node, 0, d);
     bfs(g); //幅優先探索によりホップ数計算
     for (int i = 0; i < numberofpackets; i++)
     {
-        BroadcastFromSource(g, node, 0, i, d);
+        BroadcastFromSource(g, node, obs_node, 0, i, d);
     }
     //中継ノードの優先度を決定
     //各priorityqueueに優先度を入れている？
@@ -1222,12 +1225,13 @@ void simulate_with_Tv_with_at()
     //パケットはuID指定
     set_map(node);
     AttackerSet(); //攻撃ノード指定
+    cntint_flush_all(obs_node);
     seen.assign(N, false);
     Decidepriorityfromsource(g, node, 0, d);
     bfs(g); //幅優先探索によりホップ数計算
     for (int i = 0; i < numberofpackets; i++)
     {
-        BroadcastFromSource(g, node, 0, i, d);
+        BroadcastFromSource(g, node, obs_node, 0, i, d);
     }
     //中継ノードの優先度を決定
     //各priorityqueueに優先度を入れている？
@@ -1258,12 +1262,13 @@ void simulate_with_Suggest_with_attack()
     //パケットはuID指定
     set_map(node);
     AttackerSet(); //攻撃ノード指定
+    cntint_flush_all(obs_node);
     seen.assign(N, false);
     Decidepriorityfromsource(g, node, 0, d);
     bfs(g); //幅優先探索によりホップ数計算
     for (int i = 0; i < numberofpackets; i++)
     {
-        BroadcastFromSource(g, node, 0, i, d);
+        BroadcastFromSource(g, node, obs_node, 0, i, d);
     }
     //中継ノードの優先度を決定
     //各priorityqueueに優先度を入れている？
