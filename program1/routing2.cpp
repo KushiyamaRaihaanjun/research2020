@@ -25,7 +25,7 @@ const int number_of_malnodes = 1; //悪意のあるノード数
 int mode = 0;                     //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;                     //通信成功率(定数)
-double threshold = 0.5000;                          // 信頼値の閾値
+double threshold = 0.6000;                          // 信頼値の閾値
 double theta = 0.5;                                 //直接的な信頼値の重み
 const int packet_step = 10;                         //ラウンドで送信するパケット数
 const int numberofpackets = packet_step * mx_round; //送信するパケット数
@@ -75,9 +75,9 @@ struct ONode
 {
     //alpha...number of packets successfully received
     //beta .. all of packets transmitted
-    int alpha[1000][mx_round];
-    int beta[1000][mx_round];
-    double dsarray[N][4]; //D-S理論計算(各ノードに対してサイズN)
+    int alpha[N][mx_round]; //変更:1000->N
+    int beta[N][mx_round];  //変更:1000->N
+    double dsarray[N][4];   //D-S理論計算(各ノードに対してサイズN)
     int state;
     /*0(emptyset)
     1(trustee)
@@ -452,7 +452,7 @@ void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to) //, 
     int all_val = on[node_num_to].alpha[node_num_from][send_round] + on[node_num_to].beta[node_num_from][send_round];
     //n[node_num].dtv
     //リンクのあるエッジを取得
-    on[node_num_to].dtv[node_num_from] = (double)(on[node_num_to].alpha[node_num_from][send_round] / all_val);
+    on[node_num_to].dtv[node_num_from] = (double)((double)on[node_num_to].alpha[node_num_from][send_round] / (double)all_val);
 
     //ここで返すか返さないか
     //return (double)(n[node_num].alpha / all_val);
@@ -628,13 +628,14 @@ void BlackholeAttackWithmode(Graph &gr, Node n[], ONode on[], int node_num, int 
         //node_num(送信元ノードの観察)
         WhenRecvPacketFal(gr, n, on, num_edge_to, node_num, tmp_packet_num);
         //周辺ノードについてもカウントする(to do)
-        for (auto edge_tr : gr[node_num])
-        {
-            if (edge_tr.to != num_edge_to)
-            {
-                WhenRecvPacketFal(gr, n, on, num_edge_to, edge_tr.to, tmp_packet_num);
-            }
-        }
+        //二重にカウントしている: いらない
+        //for (auto edge_tr : gr[node_num])
+        //{
+        //    if (edge_tr.to != num_edge_to)
+        //    {
+        //        WhenRecvPacketFal(gr, n, on, num_edge_to, edge_tr.to, tmp_packet_num);
+        //    }
+        //}
     }
 }
 
@@ -1406,6 +1407,7 @@ void show_map(Node node[])
 }
 
 //malnodes_arrayから検出率を求める
+//malnodes_arrayの表示
 void get_detect_rate()
 {
     int cnt_of_detected = 0;
@@ -1418,6 +1420,16 @@ void get_detect_rate()
     }
     double detection_rate = (double)(cnt_of_detected / number_of_malnodes);
     cout << "Detection Rate: " << detection_rate << endl;
+    for (int i = 0; i < N; i++)
+    {
+        if (malnodes_array[i].size() > 0)
+        {
+            for (int j = 0; j < malnodes_array[i].size(); j++)
+            {
+                cout << "Node " << i << ": malicious " << malnodes_array[i][j] << endl;
+            }
+        }
+    }
 }
 
 //PDRの表示
