@@ -25,7 +25,7 @@ const int number_of_malnodes = 1; //悪意のあるノード数
 int mode = 0;                     //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;                     //通信成功率(定数)
-double threshold = 0.6000;                          // 信頼値の閾値
+double threshold = 0.5000;                          // 信頼値の閾値
 double theta = 0.5;                                 //直接的な信頼値の重み
 const int packet_step = 10;                         //ラウンドで送信するパケット数
 const int numberofpackets = packet_step * mx_round; //送信するパケット数
@@ -77,7 +77,7 @@ struct ONode
     //beta .. all of packets transmitted
     int alpha[1000][mx_round];
     int beta[1000][mx_round];
-    double dsarray[1000][4]; //D-S理論計算
+    double dsarray[N][4]; //D-S理論計算(各ノードに対してサイズN)
     int state;
     /*0(emptyset)
     1(trustee)
@@ -515,22 +515,30 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
 }
 
 //直接的・間接的な信頼値を0.6で初期化
-void init_itv(ONode n[], int node_num_to)
+void init_itv(ONode on[], int node_num_to)
 {
-    n[node_num_to].itv = 0.6;
+    on[node_num_to].itv = 0.6;
 }
 
-void init_dtv(ONode n[], int node_num_from, int node_num_to)
+void init_dtv(ONode on[], int node_num_from, int node_num_to)
 {
-    n[node_num_to].dtv[node_num_from] = 0.6;
+    on[node_num_to].dtv[node_num_from] = 0.6;
 }
 
-//ONodeのdtv配列をリセットする
+//ONodeのdtv/itv配列をリセットする
 void array_ONodeinit(ONode on[])
 {
     for (int i = 0; i < N; i++)
     {
         on[i].arrayresize();
+        init_itv(on, i);
+    }
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            init_dtv(on, i, j);
+        }
     }
 }
 //信頼値の更新をラウンドごとに行う関数を書く
