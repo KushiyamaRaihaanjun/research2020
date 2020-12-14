@@ -125,13 +125,14 @@ struct ONode
             if (node_num_to != collect.to) //node_num_toがitvの測定で調べたいノードのノード番号
             {
                 //on[collect.to].dtv[node_num_from]は証拠を聞くノードの信頼値,dtv[collect.to]はcollect.to->観測対象ノードにおける直接的な信頼値
-                if (on[collect.to].dtv[node_num_from] > threshold && dtv[node_num_to] > threshold) //y[i]が信頼できるノードかつ観測対象ノードが信頼できるとき
+                //変更
+                if (on[collect.to].dtv[node_num_from] > threshold && on[node_num_to].dtv[collect.to] > threshold) //collect.toが信頼できるノードかつ観測対象ノードが信頼できるとき
                 {
                     dsarray[collect.to][1] = on[collect.to].dtv[node_num_from];
                     dsarray[collect.to][2] = 0.0;
                     dsarray[collect.to][3] = 1.0 - on[collect.to].dtv[node_num_from];
                 }
-                else if (on[collect.to].dtv[node_num_from] > threshold && dtv[node_num_to] <= threshold) //y[i]が信頼できるノードかつかつ観測対象ノードが信頼できないとき
+                else if (on[collect.to].dtv[node_num_from] > threshold && on[node_num_to].dtv[collect.to] <= threshold) //collect.toが信頼できるノードかつかつ観測対象ノードが信頼できないとき
                 {
                     dsarray[collect.to][1] = 0.0;
                     dsarray[collect.to][2] = on[collect.to].dtv[node_num_from];
@@ -232,13 +233,13 @@ double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to)
     /*HHH ,HHU ... などの列挙をやる*/
     /*U を0 に，H を1 に対応させる*/
     double val = 1.0;
-    double val2 = 0.0;
+    double val2 = 0.0; //返り値
     //vector<bool> bitval(gr[node_num].size()); //bitsetの代わりに使いたい,size
     int observer_node_size = gr[node_num_from].size(); //これでOK
-    //どのノードともリンクがなかった場合
+    //どのノードともリンクがなかった場合、しきい値を返す
     if (observer_node_size == 0)
     {
-        return 0.5;
+        return threshold;
     }
     //グラフからノード番号を取得する必要がありそう
     //添え字を何とかする
@@ -455,7 +456,6 @@ void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to) //, 
     //n[node_num].dtv
     //リンクのあるエッジを取得
     on[node_num_to].dtv[node_num_from] = (double)((double)on[node_num_to].alpha[node_num_from][send_round] / (double)all_val);
-
     //ここで返すか返さないか
     //return (double)(n[node_num].alpha / all_val);
 }
@@ -473,7 +473,7 @@ void caliculate_indirect_trust_value(ONode on[], const Graph &g, int node_num_fr
 double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to)
 {
     double trust_value;
-    trust_value = theta * on[node_num_to].dtv[node_num_from] + (1 - theta) * on[node_num_to].itv;
+    trust_value = theta * on[node_num_to].dtv[node_num_from] + (1.0 - theta) * on[node_num_to].itv;
     return trust_value;
 }
 

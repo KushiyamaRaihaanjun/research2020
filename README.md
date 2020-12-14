@@ -114,7 +114,7 @@ ORの実装・信頼値測定についてのメモ
 - BFS
     - hop数を取得するのに用いる
 - routing1からの変更
-    - SendlessとSendHighestを変更
+    - BroadcastFromSource,SendlessとSendHighestを変更
 ## 実装に関するTo do とメモ
 - To do(12/8)
     <!--
@@ -173,4 +173,9 @@ ORの実装・信頼値測定についてのメモ
     - 検出したら優先度を変更するとかもやりたい
 - 不具合
     - 優先度がもっとも高いノードが送信するとき，重複を避けないケース
+- To do(12/14)
+    - 12/12参照
+    - on.itvは要求のたび書き換わるので問題ないはず
+    - 周辺ノードの計算を入れてなかった？->入れる
+        - CalTrust_and_Filteringの前半でやっていた
 
