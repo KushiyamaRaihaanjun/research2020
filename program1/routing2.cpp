@@ -27,6 +27,7 @@ int mode = 0;                     //実験モード
 double constant_suc_rate = 0.8;                     //通信成功率(定数)
 double threshold = 0.6000;                          // 信頼値の閾値
 double theta = 0.5;                                 //直接的な信頼値の重み
+double gm = 1.5;                                    //dtvを求める際の悪意のある動作betaの重み
 const int packet_step = 10;                         //ラウンドで送信するパケット数
 const int numberofpackets = packet_step * mx_round; //送信するパケット数
 double tmpetx = 0.0;                                //etx計算用
@@ -449,7 +450,8 @@ void cntint_flush_all(ONode on[]) //, Graph &gr)
 //dtvにはラウンドがあることに注意
 void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to) //, const Graph &gr)
 {
-    int all_val = on[node_num_to].alpha[node_num_from][send_round] + on[node_num_to].beta[node_num_from][send_round];
+    //betaに重み付け
+    double all_val = (double)(on[node_num_to].alpha[node_num_from][send_round]) + gm * (double)(on[node_num_to].beta[node_num_from][send_round]);
     //n[node_num].dtv
     //リンクのあるエッジを取得
     on[node_num_to].dtv[node_num_from] = (double)((double)on[node_num_to].alpha[node_num_from][send_round] / (double)all_val);
