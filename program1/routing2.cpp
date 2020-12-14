@@ -628,7 +628,10 @@ void BlackholeAttackWithmode(Graph &gr, Node n[], ONode on[], int node_num, int 
         int tmp_packet_num = packet_num;
         BlackholeAttack(n, num_edge_to);
         //node_num(送信元ノードの観察)
-        WhenRecvPacketFal(gr, n, on, num_edge_to, node_num, tmp_packet_num);
+        if (IsRegisteredAt(num_edge_to))
+        {
+            WhenRecvPacketFal(gr, n, on, num_edge_to, node_num, tmp_packet_num);
+        }
         //周辺ノードについてもカウントする(to do)
         //二重にカウントしている: いらない
         //for (auto edge_tr : gr[node_num])
@@ -1016,6 +1019,7 @@ void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     //宛先がpacket_step個パケットを受信したときの処理
     if (mode >= 2) //信頼値測定を行うかをモードで分岐する
     {
+        //宛先がpacket_step個パケットを受信したとき
         if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * (send_round + 1))
         {
             CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
