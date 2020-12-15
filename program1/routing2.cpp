@@ -93,7 +93,7 @@ struct ONode
         dtv.resize(N);
     }
     //set_itv : 観察ノードの間接的な信頼値をセットする
-    void set_itv_rel(ONode on[], const Graph &gr, int node_num_from, int node_num_to)
+    void set_itv_rel(ONode on[], Graph &gr, int node_num_from, int node_num_to)
     {
         //ここを何とかする
         //for (int i = 0; i < N; i++) //Nを変更する，Nは本来オブザーバーの数だった:グラフで取得する
@@ -128,21 +128,21 @@ struct ONode
                 //変更
                 if (on[collect.to].dtv[node_num_from] > threshold && on[node_num_to].dtv[collect.to] > threshold) //collect.toが信頼できるノードかつ観測対象ノードが信頼できるとき
                 {
-                    dsarray[collect.to][1] = on[collect.to].dtv[node_num_from];
-                    dsarray[collect.to][2] = 0.0;
-                    dsarray[collect.to][3] = 1.0 - on[collect.to].dtv[node_num_from];
+                    on[node_num_to].dsarray[collect.to][1] = on[collect.to].dtv[node_num_from];
+                    on[node_num_to].dsarray[collect.to][2] = 0.0;
+                    on[node_num_to].dsarray[collect.to][3] = 1.0 - on[collect.to].dtv[node_num_from];
                 }
                 else if (on[collect.to].dtv[node_num_from] > threshold && on[node_num_to].dtv[collect.to] <= threshold) //collect.toが信頼できるノードかつかつ観測対象ノードが信頼できないとき
                 {
-                    dsarray[collect.to][1] = 0.0;
-                    dsarray[collect.to][2] = on[collect.to].dtv[node_num_from];
-                    dsarray[collect.to][3] = 1.0 - on[collect.to].dtv[node_num_from];
+                    on[node_num_to].dsarray[collect.to][1] = 0.0;
+                    on[node_num_to].dsarray[collect.to][2] = on[collect.to].dtv[node_num_from];
+                    on[node_num_to].dsarray[collect.to][3] = 1.0 - on[collect.to].dtv[node_num_from];
                 }
                 else
                 {
-                    dsarray[collect.to][1] = 0.0;
-                    dsarray[collect.to][2] = 0.0;
-                    dsarray[collect.to][3] = 1.0;
+                    on[node_num_to].dsarray[collect.to][1] = 0.0;
+                    on[node_num_to].dsarray[collect.to][2] = 0.0;
+                    on[node_num_to].dsarray[collect.to][3] = 1.0;
                 }
             }
         }
@@ -162,7 +162,7 @@ void DecFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_sen
 void cntint_flush(ONode on[], int node_num_from, int node_num_to);
 void cntint_flush_all(ONode on[]);
 void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to);
-void caliculate_indirect_trust_value(ONode on[], const Graph &g, int node_num_from, int node_num_to);
+void caliculate_indirect_trust_value(ONode on[], Graph &g, int node_num_from, int node_num_to);
 double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to);
 void CalTrust_and_Filtering(ONode on[], Graph &gr);
 void init_itv(ONode n[], int node_num_to);
@@ -235,7 +235,7 @@ double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to)
     double val = 1.0;
     double val2 = 0.0; //返り値
     //vector<bool> bitval(gr[node_num].size()); //bitsetの代わりに使いたい,size
-    int observer_node_size = gr[node_num_from].size(); //これでOK
+    int observer_node_size = gr[node_num_from].size() - 1; //これでOK
     //どのノードともリンクがなかった場合、しきい値を返す
     if (observer_node_size == 0)
     {
@@ -257,7 +257,10 @@ double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to)
     vector<int> nb_nodes(observer_node_size);
     for (auto num_edge : gr[node_num_from])
     {
-        nb_nodes.push_back(num_edge.to);
+        if (num_edge.to != node_num_to)
+        {
+            nb_nodes.push_back(num_edge.to);
+        }
     }
     for (int i = 0; i < (1 << observer_node_size); i++) //N->変更
     {
@@ -269,17 +272,17 @@ double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to)
             for (int j = 0; j < observer_node_size; j++)
             {
                 //binarrayが関係ないところの添え字を変える
-                if (nb_nodes[j] != node_num_to) //nb_nodesが測定対象のノードでない場合
+                //if (nb_nodes[j] != node_num_to) //nb_nodesが測定対象のノードでない場合
+                //{
+                if (binarray[j] == 0)
                 {
-                    if (binarray[j] == 0)
-                    {
-                        val *= x.dsarray[nb_nodes[j]][binarray[j] + 3]; //0+3だからなくてもいい
-                    }
-                    else
-                    {
-                        val *= x.dsarray[nb_nodes[j]][binarray[j]];
-                    }
+                    val *= x.dsarray[nb_nodes[j]][binarray[j] + 3]; //0+3だからなくてもいい
                 }
+                else
+                {
+                    val *= x.dsarray[nb_nodes[j]][binarray[j]];
+                }
+                //}
             }
             val2 += val;
         }
@@ -307,7 +310,7 @@ double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to)
     //オーバフロー起こりそう
     //ds_trustと同じ
     map<int, int> setcount;
-    int observer_node_size = gr[node_num_from].size();
+    int observer_node_size = gr[node_num_from].size() - 1;
     //リンクがない場合1.0を返す
     if (observer_node_size == 0)
     {
@@ -316,7 +319,10 @@ double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to)
     vector<int> nb_nodes(observer_node_size);
     for (auto num_edge : gr[node_num_from])
     {
-        nb_nodes.push_back(num_edge.to);
+        if (num_edge.to != node_num_to)
+        {
+            nb_nodes.push_back(num_edge.to);
+        }
     }
     for (int i = 0; i < (int)(pow(3, observer_node_size)); i++)
     {
@@ -324,10 +330,10 @@ double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to)
         num_to_three(i);
         for (int j = 0; j < observer_node_size; j++)
         {
-            if (nb_nodes[j] != node_num_to) //観測対象のノード番号と等しくない場合
-            {
-                setcount[threearray[j] + 1]++;
-            }
+            //if (nb_nodes[j] != node_num_to) //観測対象のノード番号と等しくない場合
+            //{
+            setcount[threearray[j] + 1]++;
+            //}
         }
         if (setcount[1] > 0 && setcount[2] > 0)
         {
@@ -338,10 +344,10 @@ double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to)
             //nb_nodesで順番に取得していく？
             for (int j = 0; j < observer_node_size; j++)
             {
-                if (nb_nodes[j] != node_num_to) //観測対象のノード番号と等しくない場合
-                {
-                    val *= x.dsarray[nb_nodes[j]][threearray[j] + 1];
-                }
+                //if (nb_nodes[j] != node_num_to) //観測対象のノード番号と等しくない場合
+                //{
+                val *= x.dsarray[nb_nodes[j]][threearray[j] + 1];
+                //}
             }
             val2 += val;
         }
@@ -461,7 +467,7 @@ void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to) //, 
 }
 
 //間接的なノード信頼値の計算
-void caliculate_indirect_trust_value(ONode on[], const Graph &g, int node_num_from, int node_num_to)
+void caliculate_indirect_trust_value(ONode on[], Graph &g, int node_num_from, int node_num_to)
 {
     //間接的にノードに観察させる
     on[node_num_to].set_itv_rel(on, g, node_num_from, node_num_to);
