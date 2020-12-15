@@ -25,9 +25,9 @@ const int number_of_malnodes = 1; //悪意のあるノード数
 int mode = 0;                     //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;                     //通信成功率(定数)
-double threshold = 0.6000;                          // 信頼値の閾値
+double threshold = 0.5000;                          // 信頼値の閾値
 double theta = 0.5;                                 //直接的な信頼値の重み
-double gm = 1.5;                                    //dtvを求める際の悪意のある動作betaの重み
+double gm = 1.05;                                   //dtvを求める際の悪意のある動作betaの重み
 const int packet_step = 10;                         //ラウンドで送信するパケット数
 const int numberofpackets = packet_step * mx_round; //送信するパケット数
 double tmpetx = 0.0;                                //etx計算用
@@ -126,6 +126,7 @@ struct ONode
             {
                 //on[collect.to].dtv[node_num_from]は証拠を聞くノードの信頼値,dtv[collect.to]はcollect.to->観測対象ノードにおける直接的な信頼値
                 //変更
+                //代入するように変更した
                 if (on[collect.to].dtv[node_num_from] > threshold && on[node_num_to].dtv[collect.to] > threshold) //collect.toが信頼できるノードかつ観測対象ノードが信頼できるとき
                 {
                     on[node_num_to].dsarray[collect.to][1] = on[collect.to].dtv[node_num_from];
@@ -152,8 +153,8 @@ struct ONode
 /*プロトタイプ宣言*/
 void num_to_three(int x);
 void num_to_bin(int x);
-double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to);
-double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to);
+double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to);
+double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to);
 void cnt_inter(ONode on[], int node_num_from, int node_num_to, int ev_val);
 void CntSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
 void CntFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
@@ -227,7 +228,7 @@ void num_to_bin(int x)
         power2 *= 2;
     }
 }
-double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to)
+double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to)
 {
     /*bitset か，bit 全探索*/
     /*HHH ,HHU ... などの列挙をやる*/
@@ -237,7 +238,7 @@ double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to)
     //vector<bool> bitval(gr[node_num].size()); //bitsetの代わりに使いたい,size
     int observer_node_size = gr[node_num_from].size() - 1; //これでOK
     //どのノードともリンクがなかった場合、しきい値を返す
-    if (observer_node_size == 0)
+    if (observer_node_size <= 0)
     {
         return threshold;
     }
@@ -254,7 +255,7 @@ double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to)
     //jのfor文だけ変更
     //for文でノード番号を順番にプッシュしておく
     //0...(nodenum-1)でアクセスできるようにする
-    vector<int> nb_nodes(observer_node_size);
+    vector<int> nb_nodes; //(observer_node_size);
     for (auto num_edge : gr[node_num_from])
     {
         if (num_edge.to != node_num_to)
@@ -276,11 +277,11 @@ double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to)
                 //{
                 if (binarray[j] == 0)
                 {
-                    val *= x.dsarray[nb_nodes[j]][binarray[j] + 3]; //0+3だからなくてもいい
+                    val *= x.dsarray[nb_nodes[j]][3]; //0+3だからなくてもいい
                 }
                 else
                 {
-                    val *= x.dsarray[nb_nodes[j]][binarray[j]];
+                    val *= x.dsarray[nb_nodes[j]][1];
                 }
                 //}
             }
@@ -293,7 +294,7 @@ double ds_trust(ONode x, const Graph &gr, int node_num_from, int node_num_to)
 }
 
 //すべての場合を計算する
-double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to)
+double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to)
 {
     double all_val = 0.0;
     double val = 1.0;
@@ -312,11 +313,11 @@ double ds_all(ONode x, const Graph &gr, int node_num_from, int node_num_to)
     map<int, int> setcount;
     int observer_node_size = gr[node_num_from].size() - 1;
     //リンクがない場合1.0を返す
-    if (observer_node_size == 0)
+    if (observer_node_size <= 0)
     {
         return 1.0;
     }
-    vector<int> nb_nodes(observer_node_size);
+    vector<int> nb_nodes; //(observer_node_size);
     for (auto num_edge : gr[node_num_from])
     {
         if (num_edge.to != node_num_to)
@@ -632,10 +633,11 @@ void BlackholeAttackWithmode(Graph &gr, Node n[], ONode on[], int node_num, int 
     else if (mode >= 2) //ブラックホール攻撃・信頼値測定/提案手法
     {
         int tmp_packet_num = packet_num;
-        BlackholeAttack(n, num_edge_to);
+
         //node_num(送信元ノードの観察)
         if (IsRegisteredAt(num_edge_to))
         {
+            BlackholeAttack(n, num_edge_to);
             WhenRecvPacketFal(gr, n, on, num_edge_to, node_num, tmp_packet_num);
         }
         //周辺ノードについてもカウントする(to do)
@@ -1021,20 +1023,16 @@ void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     //受信成功時のメッセージ
     cout << "Node " << node_num_recv << " received packet " << packet_num << " from Node " << node_num_send << endl;
     n[node_num_recv].q.push(packet_num);
-
     //宛先がpacket_step個パケットを受信したときの処理
     if (mode >= 2) //信頼値測定を行うかをモードで分岐する
     {
-        //宛先がpacket_step個パケットを受信したとき
+        CntSuc(gr, n, on, node_num_recv, node_num_send); //成功をカウント
+        //宛先がpacket_step個パケットを受信したときの処理
         if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * (send_round + 1))
         {
             CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
             round_set_next();               //ラウンドを1進める
             cntint_flush_all(on);           //インタラクション数のリセット
-        }
-        else //そうでない場合インタラクション数を更新する
-        {
-            CntSuc(gr, n, on, node_num_recv, node_num_send);
         }
     }
 }
