@@ -187,6 +187,8 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
 void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, int dst);
 void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource, int node_num, Edge num_edge, queue<int> que);
 void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge num_edge, queue<int> que);
+void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
+void WhenSendPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
 void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
 void WhenRecvPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
 void WhenRecvPacketDup(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
@@ -911,8 +913,9 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
                     //送信成功
                     if (rnd.randBool(num_edge.tsuccess_rate))
                     {
+                        //sendmapを成功に変える
+                        WhenSendPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
                         //パケットの重複判定をする
-                        n[node_num].sendmap[que.front()] = true; //送信マップをtrue
                         WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
                         //modeで信頼値測定を行うか行わないかを切り替える
                         BlackholeAttackWithmode(gr, n, on, node_num, num_edge.to, que.front());
@@ -923,7 +926,8 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
                     }
                     else //失敗
                     {
-                        n[node_num].sendmap[que.front()] = false; //送信マップをfalse
+                        //sendmapを失敗に変える
+                        WhenSendPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
                         WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
                         //to do
                         //エッジを調べる
@@ -976,7 +980,8 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
             //パケットの重複判定をする
             if (n[num_edge.to].recvmap[que.front()] == false) //まだキューの先頭のパケットを受信していない場合
             {
-                n[node_num].sendmap[que.front()] = true; //送信マップをtrue
+                //sendmapの更新
+                WhenSendPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
                 //受信時処理をWhenRecvに移動した
                 WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
                 //modeで攻撃時に観察を行うかを切り替える
@@ -1001,7 +1006,8 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
         }
         else
         {
-            n[node_num].sendmap[que.front()] = false; //送信マップをfalse
+            //sendmapを失敗に更新
+            WhenSendPacketFal(gr, n, on, num_edge.to, node_num, que.front());
             //受信失敗時処理をRecvpacketFalに移動
             WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
             que.pop();
@@ -1013,7 +1019,36 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
     }     //end while
 }
 
-//送信成功時
+//送信mapをtrueにする関数
+//1hop後ろのノードに送信成功を通知する
+void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
+{
+    n[node_num_send].sendmap[packet_num] = true; //送信マップをtrue
+    //node_num_sendに接続しているノードとそれと接続している全ノードに送信成功を通知する
+    for (int i = 0; i < N; i++)
+    {
+        if (i != node_num_send && IsLinked(gr, i, node_num_send))
+        {
+            cnt_inter(on, i, node_num_send, 0);
+        }
+    }
+}
+
+//送信mapをfalseにする関数
+//1hop後ろのノードに送信失敗を通知する
+void WhenSendPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
+{
+    n[node_num_send].sendmap[packet_num] = false; //送信マップをfalse
+    //node_num_sendに接続しているノードとそれと接続している全ノードに送信失敗を通知する
+    for (int i = 0; i < N; i++)
+    {
+        if (i != node_num_send && IsLinked(gr, i, node_num_send))
+        {
+            cnt_inter(on, i, node_num_send, 1);
+        }
+    }
+}
+//送信成功時(受信成功時)
 //recvmapの状態を成功に変える
 //変えた上でrecvmapを参照し，packet_step個増えたら信頼値関数を呼び出しラウンドを増やす
 void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
