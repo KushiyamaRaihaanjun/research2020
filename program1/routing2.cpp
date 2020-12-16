@@ -181,6 +181,7 @@ void dfs(const Graph &gr, int ver);
 void bfs(const Graph &gr);
 int GetMaxHop();
 bool IsLinked(Graph &gr, int from, int to);
+bool IsOneHopNeighbor(Graph &gr, int node_num1, int node_num2);
 void dijkstra_etx(const Graph &gr, int s, vector<double> &dis);
 void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst);
 void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst);
@@ -189,6 +190,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
 void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge num_edge, queue<int> que);
 void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
 void WhenSendPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
+void WhenSendPacketDup(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
 void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
 void WhenRecvPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
 void WhenRecvPacketDup(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
@@ -487,6 +489,7 @@ double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to)
 }
 
 //信頼値測定を行って悪意のあるノードをフィルタリングする
+//dtvに基づく追加と最終的なtvに基づく追加を作る？
 void CalTrust_and_Filtering(ONode on[], Graph &gr)
 {
     for (int i = 0; i < N; i++)
@@ -497,6 +500,12 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
             {
                 //直接的なノード信頼値の計算
                 caliculate_and_set_dtv(on, i, j);
+                //dtvがしきい値以下の場合
+                //i,jが直接つながっているまたはあるノードの共通の1hopノードである場合
+                if (on[j].dtv[i] <= threshold && IsOneHopNeighbor(gr, i, j) == true)
+                {
+                    RegistTable(j, i);
+                }
             }
         }
     }
@@ -749,6 +758,19 @@ bool IsLinked(Graph &gr, int from, int to)
     return false;
 }
 
+//node_num1とnode_num2に共通の1hopノードがあるかどうか判定する関数
+bool IsOneHopNeighbor(Graph &gr, int node_num1, int node_num2)
+{
+    for (int i = 0; i < N; i++)
+    {
+        if (IsLinked(gr, i, node_num1) && IsLinked(gr, i, node_num2))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 //ダイクストラ法
 void dijkstra_etx(const Graph &gr, int s, vector<double> &dis)
 {
@@ -927,7 +949,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
                     else //失敗
                     {
                         //sendmapを失敗に変える
-                        WhenSendPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
+                        WhenSendPacketFal(gr, n, on, num_edge.to, node_num, que.front());
                         WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
                         //to do
                         //エッジを調べる
@@ -948,9 +970,11 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
             else
             {
                 cout << "Node " << node_num << " Drop packet " << que.front() << " to prevent duplicate (to Node" << num_edge.to << endl;
+                WhenSendPacketFal(gr, n, on, num_edge.to, node_num, que.front());
                 WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
                 if (mode == 3) //提案手法あり
                 {
+                    WhenSendPacketDup(gr, n, on, num_edge.to, node_num, que.front());
                     WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, que.front());
                 }
             }
@@ -992,9 +1016,11 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
                 //重複時のメッセージ
                 cout << "Node " << num_edge.to << " ignoring packet " << que.front() << " due to duplicate" << endl;
                 //SendFromlessに書く
+                WhenSendPacketFal(gr, n, on, num_edge.to, node_num, que.front());
                 WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
                 if (mode == 3) //提案手法あり
                 {
+                    WhenSendPacketDup(gr, n, on, num_edge.to, node_num, que.front());
                     WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, que.front());
                 }
             }
@@ -1045,6 +1071,18 @@ void WhenSendPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
         if (i != node_num_send && IsLinked(gr, i, node_num_send))
         {
             cnt_inter(on, i, node_num_send, 1);
+        }
+    }
+}
+//重複を避けるためにパケットを破棄した時(送信側)
+void WhenSendPacketDup(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
+{
+    //node_num_sendに接続しているノードとそれと接続している全ノードに送信失敗を通知する
+    for (int i = 0; i < N; i++)
+    {
+        if (i != node_num_send && IsLinked(gr, i, node_num_send))
+        {
+            cnt_inter(on, i, node_num_send, 2);
         }
     }
 }
