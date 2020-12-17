@@ -1058,6 +1058,16 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
             cnt_inter(on, i, node_num_send, 0);
         }
     }
+    //パケットをある程度送信したら信頼値を測定する
+    if (mode >= 2)
+    {
+        if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
+        {
+            CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
+            round_set_next();               //ラウンドを1進める
+            cntint_flush_all(on);           //インタラクション数のリセット
+        }
+    }
 }
 
 //送信mapをfalseにする関数
@@ -1101,12 +1111,12 @@ void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     {
         CntSuc(gr, n, on, node_num_recv, node_num_send); //成功をカウント
         //宛先がpacket_step個パケットを受信したときの処理
-        if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * (send_round + 1))
-        {
-            CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
-            round_set_next();               //ラウンドを1進める
-            cntint_flush_all(on);           //インタラクション数のリセット
-        }
+        //if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * (send_round + 1))
+        //{
+        //    CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
+        //    round_set_next();               //ラウンドを1進める
+        //    cntint_flush_all(on);           //インタラクション数のリセット
+        //}
     }
 }
 
