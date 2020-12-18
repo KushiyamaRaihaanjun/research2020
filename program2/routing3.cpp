@@ -332,18 +332,31 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
 void CalTrust_and_Filtering_nb(ONode on[], Graph &gr, int node_num_from)
 {
     //変更する
-    for (int j = 0; j < N; j++)
+    //1hopの信頼値をセットする
+    for (auto node_num : gr[node_num_from])
     {
-        //直接的なノード信頼値の計算
-        caliculate_and_set_dtv(on, node_num_from, j);
-        //dtvがしきい値以下の場合
-        //i,jが直接つながっているまたはあるノードの共通の1hopノードである場合
-        if (on[j].dtv[node_num_from] <= threshold && IsOneHopNeighbor(gr, node_num_from, j) == true)
+        caliculate_and_set_dtv(on, node_num_from, node_num.to);
+    }
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
         {
-            RegistTable(j, node_num_from);
+            //直接的なノード信頼値の計算
+            //自分ではない周りのノード...i
+            //測定対象...j
+            if (node_num_from != i && node_num_from != j && i != j && IsLinked(gr, node_num_from, i) == true && IsLinked(gr, node_num_from, j) == true)
+            {
+                caliculate_and_set_dtv(on, i, j);
+                //dtvがしきい値以下の場合
+                //i,jが直接つながっているまたはあるノードの共通の1hopノードである場合//この条件は消した
+                if (on[j].dtv[i] <= threshold)
+                {
+                    RegistTable(j, i);
+                }
+            }
         }
     }
-
+    //ここはOK
     for (int j = 0; j < N; j++)
     {
         //間接的なノード信頼値の計算
@@ -931,7 +944,7 @@ void WhenSendPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
 //重複を避けるためにパケットを破棄した時(送信側)
 void WhenSendPacketDup(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
 {
-    //node_num_sendに接続しているノードとそれと接続している全ノードに送信失敗を通知する
+    //node_num_sendに接続しているノードとそれと接続している全ノードに重複送信を避けたことを通知する
     for (int i = 0; i < N; i++)
     {
         if (i != node_num_send && IsLinked(gr, i, node_num_send))
@@ -1189,8 +1202,8 @@ void simulate_with_Tv_with_at()
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    //edge_set(g);
-    edge_set_from_file(g);
+    edge_set(g);
+    //edge_set_from_file(g);
     Node node[N];
     ONode obs_node[N];
     //攻撃ノードの情報を追加

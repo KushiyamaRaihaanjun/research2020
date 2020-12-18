@@ -1,4 +1,4 @@
-//長過ぎるのでプロトタイプ宣言などを分割
+//長過ぎるのでプロトタイプ宣言などを分割(12/18)
 #ifndef routing3header
 #define routing3header
 #include <stdio.h>
@@ -28,7 +28,7 @@ int mode = 0;                     //実験モード
 double constant_suc_rate = 0.8;  //通信成功率(定数)
 double threshold = 0.5000;       // 信頼値の閾値
 double theta = 0.5;              //直接的な信頼値の重み
-double gm = 1.05;                //dtvを求める際の悪意のある動作betaの重み
+double gm = 1.1;                 //dtvを求める際の悪意のある動作betaの重み
 const int packet_step = 10;      //ラウンドで送信するパケット数
 const int numberofpackets = 100; //送信するパケット数
 double tmpetx = 0.0;             //etx計算用
