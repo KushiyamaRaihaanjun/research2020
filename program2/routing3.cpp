@@ -1,4 +1,5 @@
-//From 2020-12-5
+//From 2020-12-18
+//ソースコードを分割
 //信頼値測定を加えたバージョン3
 #include "routing3.h"
 //三進法変換
@@ -852,12 +853,12 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     //パケットをある程度送信したら信頼値を測定する
     if (mode >= 2)
     {
-        if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
-        {
-            CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
-            round_set_next();               //ラウンドを1進める
-            cntint_flush_all(on);           //インタラクション数のリセット
-        }
+        //if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
+        //{
+        //    CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
+        //    round_set_next();               //ラウンドを1進める
+        //    cntint_flush_all(on);           //インタラクション数のリセット
+        //}
     }
 }
 
@@ -902,12 +903,12 @@ void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     {
         CntSuc(gr, n, on, node_num_recv, node_num_send); //成功をカウント
         //宛先がpacket_step個パケットを受信したときの処理
-        //if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * (send_round + 1))
-        //{
-        //    CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
-        //    round_set_next();               //ラウンドを1進める
-        //    cntint_flush_all(on);           //インタラクション数のリセット
-        //}
+        if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * (send_round + 1))
+        {
+            CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
+            round_set_next();               //ラウンドを1進める
+            cntint_flush_all(on);           //インタラクション数のリセット
+        }
     }
 }
 
@@ -1144,8 +1145,8 @@ void simulate_with_Tv_with_at()
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    //edge_set(g);
-    edge_set_from_file(g);
+    edge_set(g);
+    //edge_set_from_file(g);
     Node node[N];
     ONode obs_node[N];
     //攻撃ノードの情報を追加

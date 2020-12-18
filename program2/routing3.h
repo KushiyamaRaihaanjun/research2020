@@ -1,3 +1,4 @@
+//長過ぎるのでプロトタイプ宣言などを分割
 #ifndef routing3header
 #define routing3header
 #include <stdio.h>
