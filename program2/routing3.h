@@ -18,23 +18,23 @@ using namespace std;
 typedef long long int lli;
 
 #define INF 1e30
-const int N = 7;                  // number of nodes
+const int N = 7;                  // ノード数
 const int d = N - 1;              //宛先
 int send_round = 0;               //ラウンド
 const int mx_round = 10;          //ラウンドの最大
 const int number_of_malnodes = 1; //悪意のあるノード数
 int mode = 0;                     //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
-double constant_suc_rate = 0.8;                     //通信成功率(定数)
-double threshold = 0.5000;                          // 信頼値の閾値
-double theta = 0.5;                                 //直接的な信頼値の重み
-double gm = 1.05;                                   //dtvを求める際の悪意のある動作betaの重み
-const int packet_step = 10;                         //ラウンドで送信するパケット数
-const int numberofpackets = packet_step * mx_round; //送信するパケット数
-double tmpetx = 0.0;                                //etx計算用
-vector<bool> seen;                                  // 到達可能かどうかを調べる
-vector<bool> checked;                               // 送信元から1hopノードが送信しているか
-vector<double> cs;                                  //宛先までのetxを求めるための配列
+double constant_suc_rate = 0.8;  //通信成功率(定数)
+double threshold = 0.5000;       // 信頼値の閾値
+double theta = 0.5;              //直接的な信頼値の重み
+double gm = 1.05;                //dtvを求める際の悪意のある動作betaの重み
+const int packet_step = 10;      //ラウンドで送信するパケット数
+const int numberofpackets = 100; //送信するパケット数
+double tmpetx = 0.0;             //etx計算用
+vector<bool> seen;               // 到達可能かどうかを調べる
+vector<bool> checked;            // 送信元から1hopノードが送信しているか
+vector<double> cs;               //宛先までのetxを求めるための配列
 //エッジ型
 struct Edge
 {

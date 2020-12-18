@@ -1,6 +1,7 @@
 //From 2020-12-18
-//ソースコードを分割
+//ソースコードを分割(routing3.hを作った)
 //信頼値測定を加えたバージョン3
+//routing2にも書きかけあり
 #include "routing3.h"
 //三進法変換
 int threearray[18];
@@ -284,6 +285,7 @@ double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to)
 //dtvに基づく追加と最終的なtvに基づく追加を作る？
 void CalTrust_and_Filtering(ONode on[], Graph &gr)
 {
+    //変更する
     for (int i = 0; i < N; i++)
     {
         for (int j = 0; j < N; j++)
@@ -366,7 +368,16 @@ void array_ONodeinit(ONode on[])
 //ラウンドを増やす
 void round_set_next()
 {
-    send_round++;
+    //測定ラウンドがパケット数/step以下なら増やす
+    //そうでない場合0にする
+    if (send_round < (int)(numberofpackets / packet_step))
+    {
+        send_round++;
+    }
+    else
+    {
+        send_round = 0;
+    }
 }
 
 ////////////////////////
@@ -378,7 +389,7 @@ void round_set_next()
 void RegistTable(int mal_num, int detect_num)
 {
     //まだ登録されていない場合登録する
-    if (FindFromMaltable(detect_num, mal_num) == false)
+    if (FindFromMaltable(detect_num, mal_num) == false && mal_num != d)
     {
         malnodes_array[detect_num].push_back(mal_num);
     }
@@ -678,7 +689,8 @@ void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, i
         {
             if (rnd.randBool(num_edge.tsuccess_rate))
             {
-                n[node_num].sendmap[p] = true;
+                WhenSendPacketSuc(gr, n, on, num_edge.to, node_num, p);
+                //n[node_num].sendmap[p] = true;
                 //n[num_edge.to].recvmap[p] = true; //toのrecvmapを更新
                 //n[num_edge.to].q.push(p);         //toのキューにパケットをプッシュ
                 WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, p);
@@ -688,7 +700,8 @@ void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, i
             }
             else //失敗処理
             {
-                n[node_num].sendmap[p] |= false; //orにする
+                WhenSendPacketFal(gr, n, on, num_edge.to, node_num, p);
+                //n[node_num].sendmap[p] |= false; //orにする
                 //n[num_edge.to].recvmap[p] = false; //
                 WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, p);
                 cout << "Node " << num_edge.to << " dropped packet " << p << " ((from  Node " << node_num << endl;
@@ -851,14 +864,16 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
         }
     }
     //パケットをある程度送信したら信頼値を測定する
+    //キューサイズの1割送信したら測定する？
+    //packet_step個送信したら更新
     if (mode >= 2)
     {
-        //if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
-        //{
-        //    CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
-        //    round_set_next();               //ラウンドを1進める
-        //    cntint_flush_all(on);           //インタラクション数のリセット
-        //}
+        if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
+        {
+            CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
+            round_set_next();               //ラウンドを1進める
+            cntint_flush_all(on);           //インタラクション数のリセット
+        }
     }
 }
 
@@ -903,12 +918,13 @@ void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     {
         CntSuc(gr, n, on, node_num_recv, node_num_send); //成功をカウント
         //宛先がpacket_step個パケットを受信したときの処理
-        if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * (send_round + 1))
-        {
-            CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
-            round_set_next();               //ラウンドを1進める
-            cntint_flush_all(on);           //インタラクション数のリセット
-        }
+        //おかしいのでコメント化
+        //if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * (send_round + 1))
+        //{
+        //    CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
+        //    round_set_next();               //ラウンドを1進める
+        //    cntint_flush_all(on);           //インタラクション数のリセット
+        //}
     }
 }
 
@@ -1049,17 +1065,8 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             }
             checked[pq_intermediate[i].top().second] = true;
             pq_intermediate[i].pop();
-            //}
-            //else
-            //{
-            //    pq_intermediate[i].pop();
-            //}
-            //cnt++;
         }
-        //}
     } //end for
-      //now_hopnum++; //調べるHop数を増やす
-    //}                 //end while
 }
 
 ////////////////////////シミュレーション・結果処理関連//////////////////////////////
@@ -1145,8 +1152,8 @@ void simulate_with_Tv_with_at()
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    edge_set(g);
-    //edge_set_from_file(g);
+    //edge_set(g);
+    edge_set_from_file(g);
     Node node[N];
     ONode obs_node[N];
     //攻撃ノードの情報を追加
