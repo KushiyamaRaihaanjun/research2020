@@ -167,6 +167,7 @@ void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to);
 void caliculate_indirect_trust_value(ONode on[], Graph &g, int node_num_from, int node_num_to);
 double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to);
 void CalTrust_and_Filtering(ONode on[], Graph &gr);
+void CalTrust_and_Filtering_nb(ONode on[], Graph &gr, int node_num_from);
 void init_itv(ONode n[], int node_num_to);
 void init_dtv(ONode n[], int node_num_from, int node_num_to);
 void array_ONodeinit(ONode on[]);

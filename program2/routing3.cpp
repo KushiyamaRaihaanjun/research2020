@@ -328,6 +328,43 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
     }
 }
 
+//ループをすべてのノードではなく測定対象のノードのみを測定する
+void CalTrust_and_Filtering_nb(ONode on[], Graph &gr, int node_num_from)
+{
+    //変更する
+    for (int j = 0; j < N; j++)
+    {
+        //直接的なノード信頼値の計算
+        caliculate_and_set_dtv(on, node_num_from, j);
+        //dtvがしきい値以下の場合
+        //i,jが直接つながっているまたはあるノードの共通の1hopノードである場合
+        if (on[j].dtv[node_num_from] <= threshold && IsOneHopNeighbor(gr, node_num_from, j) == true)
+        {
+            RegistTable(j, node_num_from);
+        }
+    }
+
+    for (int j = 0; j < N; j++)
+    {
+        //間接的なノード信頼値の計算
+        //d-sでエラー出そう
+        //i-j間で直接(1ホップの)リンクがあるかを判定する
+        if (node_num_from != j && IsLinked(gr, node_num_from, j) == true)
+        {
+            //itv測定
+            caliculate_indirect_trust_value(on, gr, node_num_from, j);
+            //最終的な信頼値測定
+            double tv = cal_get_trust_value(on, node_num_from, j);
+            if (tv <= threshold) //信頼値が閾値以下の場合
+            {
+                //constを変更しようとしている
+                //RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
+                RegistTable(j, node_num_from); //まだ登録されていない場合テーブルに登録する
+            }
+        }
+    }
+}
+
 //直接的・間接的な信頼値を0.6で初期化
 void init_itv(ONode on[], int node_num_to)
 {
@@ -870,9 +907,9 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     {
         if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
         {
-            CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
-            round_set_next();               //ラウンドを1進める
-            cntint_flush_all(on);           //インタラクション数のリセット
+            CalTrust_and_Filtering_nb(on, gr, node_num_send); //信頼値の計算と結果によるフィルタリング
+            round_set_next();                                 //ラウンドを1進める
+            cntint_flush_all(on);                             //インタラクション数のリセット
         }
     }
 }
