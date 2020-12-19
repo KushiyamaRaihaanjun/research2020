@@ -1353,14 +1353,30 @@ void show_map(Node node[])
 void get_detect_rate()
 {
     int cnt_of_detected = 0;
+    map<int, int> mp;
+    //検出したノード番号と出現回数を記録する
     for (int i = 0; i < N; i++)
     {
         if (malnodes_array[i].size() > 0)
         {
-            cnt_of_detected += malnodes_array[i].size();
+            for (int j = 0; j < malnodes_array[i].size(); i++)
+            {
+                mp[malnodes_array[i][j]]++;
+            }
+            //cnt_of_detected += malnodes_array[i].size();
         }
     }
-    double detection_rate = (double)(cnt_of_detected / number_of_malnodes);
+    for (auto i : mp)
+    {
+        for (int j = 0; j < attacker_array.size(); j++)
+        {
+            if (attacker_array[j] == i.first)
+            {
+                cnt_of_detected++;
+            }
+        }
+    }
+    double detection_rate = (double)((double)cnt_of_detected / (double)number_of_malnodes);
     cout << "Detection Rate: " << detection_rate << endl;
     for (int i = 0; i < N; i++)
     {
