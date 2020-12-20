@@ -21,41 +21,42 @@ typedef long long int lli;
 const int N = 7;                  // ノード数
 const int d = N - 1;              //宛先
 int send_round = 0;               //ラウンド
-const int mx_round = 10;          //ラウンドの最大
 const int number_of_malnodes = 1; //悪意のあるノード数
 int mode = 0;                     //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
-double constant_suc_rate = 0.8;  //通信成功率(定数)
-double threshold = 0.5000;       // 信頼値の閾値
-double theta = 0.5;              //直接的な信頼値の重み
-double gm = 1.1;                 //dtvを求める際の悪意のある動作betaの重み
-const int packet_step = 10;      //ラウンドで送信するパケット数
-const int numberofpackets = 100; //送信するパケット数
-double tmpetx = 0.0;             //etx計算用
-vector<bool> seen;               // 到達可能かどうかを調べる
-vector<bool> checked;            // 送信元から1hopノードが送信しているか
-vector<double> cs;               //宛先までのetxを求めるための配列
+long double constant_suc_rate = 0.8;                       //通信成功率(定数)
+long double threshold = 0.5000;                            // 信頼値の閾値
+long double theta = 0.5;                                   //直接的な信頼値の重み
+long double gm = 1.05;                                     //dtvを求める際の悪意のある動作betaの重み
+const int packet_step = 10;                                //ラウンドで送信するパケット数
+const int numberofpackets = 100;                           //送信するパケット数
+const int mx_round = (int)(numberofpackets / packet_step); //ラウンドの最大
+long double tmpetx = 0.0;                                  //etx計算用
+vector<bool> seen;                                         // 到達可能かどうかを調べる
+vector<bool> checked;                                      // 送信元から1hopノードが送信しているか
+vector<long double> cs;                                    //宛先までのetxを求めるための配列
+long double eps = 1e-15;                                   //数値誤差
 //エッジ型
 struct Edge
 {
     int to;
-    double tsuccess_rate;
-    Edge(int t, double rate) : to(t), tsuccess_rate(rate){};
+    long double tsuccess_rate;
+    Edge(int t, long double rate) : to(t), tsuccess_rate(rate){};
 };
 using Graph = vector<vector<Edge>>;                            //グラフ型
-using P = pair<double, int>;                                   //ETX,ノード番号のペア
+using P = pair<long double, int>;                              //ETX,ノード番号のペア
 priority_queue<P, vector<P>, greater<P>> pq_onehop_fromsource; //1hopノードの優先度付きキュー
 priority_queue<P, vector<P>, greater<P>> pq_intermediate[N];   //各ノードの優先度付きキュー
 vector<int> attacker_array;                                    //攻撃ノードの番号が入った配列(攻撃ノード用)
 vector<vector<int>> malnodes_array(N);                         //悪意のあるノードを検知したときに使う配列(各ノードが保持)
-vector<vector<double>> trust_value_array;                      //信頼値を格納する配列
+vector<vector<long double>> trust_value_array;                 //信頼値を格納する配列
 struct Node
 {
     //alpha...number of packets successfully received
     //beta .. all of packets transmitted
 
     //x,y...座標
-    double x, y;
+    long double x, y;
     int alpha;
     int beta;
     bool sendmap[numberofpackets];
@@ -66,8 +67,8 @@ struct Node
     1(trustee)
     2(untrustee)
     3(uncertain)*/
-    double dtv;
-    double itv;
+    long double dtv;
+    long double itv;
 };
 //解体する？
 //dtvをうまく使った形に変更する
@@ -77,17 +78,17 @@ struct ONode
 {
     //alpha...number of packets successfully received
     //beta .. all of packets transmitted
-    int alpha[N][mx_round]; //変更:1000->N
-    int beta[N][mx_round];  //変更:1000->N
-    double dsarray[N][4];   //D-S理論計算(各ノードに対してサイズN)
+    int alpha[N][mx_round];    //変更:1000->N
+    int beta[N][mx_round];     //変更:1000->N
+    long double dsarray[N][4]; //D-S理論計算(各ノードに対してサイズN)
     int state;
     /*0(emptyset)
     1(trustee)
     2(untrustee)
     3(uncertain)*/
-    //double dtv[1000];
-    vector<double> dtv; //サイズを決めてないとセグメンテーションフォルトになる(vector)
-    double itv;
+    //long double dtv[1000];
+    vector<long double> dtv; //サイズを決めてないとセグメンテーションフォルトになる(vector)
+    long double itv;
     //dtv配列をリサイズする
     void arrayresize()
     {
@@ -154,8 +155,8 @@ struct ONode
 /*プロトタイプ宣言*/
 void num_to_three(int x);
 void num_to_bin(int x);
-double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to);
-double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to);
+long double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to);
+long double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to);
 void cnt_inter(ONode on[], int node_num_from, int node_num_to, int ev_val);
 void CntSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
 void CntFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
@@ -166,7 +167,7 @@ void cntint_flush_all(ONode on[]);
 void cntint_flush_nb(ONode on[], Graph &gr, int node_num_from);
 void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to);
 void caliculate_indirect_trust_value(ONode on[], Graph &g, int node_num_from, int node_num_to);
-double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to);
+long double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to);
 void CalTrust_and_Filtering(ONode on[], Graph &gr);
 void CalTrust_and_Filtering_nb(ONode on[], Graph &gr, int node_num_from);
 void init_itv(ONode n[], int node_num_to);
@@ -185,7 +186,7 @@ void bfs(const Graph &gr);
 int GetMaxHop();
 bool IsLinked(Graph &gr, int from, int to);
 bool IsOneHopNeighbor(Graph &gr, int node_num1, int node_num2);
-void dijkstra_etx(const Graph &gr, int s, vector<double> &dis);
+void dijkstra_etx(const Graph &gr, int s, vector<long double> &dis);
 void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst);
 void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst);
 void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, int dst);

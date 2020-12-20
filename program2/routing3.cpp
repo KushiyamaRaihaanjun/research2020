@@ -25,13 +25,13 @@ void num_to_bin(int x)
         power2 *= 2;
     }
 }
-double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to)
+long double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to)
 {
     /*bitset か，bit 全探索*/
     /*HHH ,HHU ... などの列挙をやる*/
     /*U を0 に，H を1 に対応させる*/
-    double val = 1.0;
-    double val2 = 0.0; //返り値
+    long double val = 1.0;
+    long double val2 = 0.0; //返り値
     //vector<bool> bitval(gr[node_num].size()); //bitsetの代わりに使いたい,size
     int observer_node_size = gr[node_num_from].size() - 1; //これでOK
     //どのノードともリンクがなかった場合、しきい値を返す
@@ -91,11 +91,11 @@ double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to)
 }
 
 //すべての場合を計算する
-double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to)
+long double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to)
 {
-    double all_val = 0.0;
-    double val = 1.0;
-    double val2 = 0.0;
+    long double all_val = 0.0;
+    long double val = 1.0;
+    long double val2 = 0.0;
     //変更する
     //3 進数
     /*
@@ -272,12 +272,12 @@ void cntint_flush_nb(ONode on[], Graph &gr, int node_num_from)
 void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to) //, const Graph &gr)
 {
     //betaに重み付け
-    double all_val = (double)(on[node_num_to].alpha[node_num_from][send_round]) + gm * (double)(on[node_num_to].beta[node_num_from][send_round]);
+    long double all_val = (long double)(on[node_num_to].alpha[node_num_from][send_round]) + gm * (long double)(on[node_num_to].beta[node_num_from][send_round]);
     //n[node_num].dtv
     //リンクのあるエッジを取得
-    on[node_num_to].dtv[node_num_from] = (double)((double)on[node_num_to].alpha[node_num_from][send_round] / (double)all_val);
+    on[node_num_to].dtv[node_num_from] = (long double)((long double)on[node_num_to].alpha[node_num_from][send_round] / (long double)all_val);
     //ここで返すか返さないか
-    //return (double)(n[node_num].alpha / all_val);
+    //return (long double)(n[node_num].alpha / all_val);
 }
 
 //間接的なノード信頼値の計算
@@ -290,9 +290,9 @@ void caliculate_indirect_trust_value(ONode on[], Graph &g, int node_num_from, in
 }
 
 //最終的な信頼値測定
-double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to)
+long double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to)
 {
-    double trust_value;
+    long double trust_value;
     trust_value = theta * on[node_num_to].dtv[node_num_from] + (1.0 - theta) * on[node_num_to].itv;
     return trust_value;
 }
@@ -332,7 +332,7 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
                 //itv測定
                 caliculate_indirect_trust_value(on, gr, i, j);
                 //最終的な信頼値測定
-                double tv = cal_get_trust_value(on, i, j);
+                long double tv = cal_get_trust_value(on, i, j);
                 if (tv <= threshold) //信頼値が閾値以下の場合
                 {
                     //constを変更しようとしている
@@ -383,7 +383,7 @@ void CalTrust_and_Filtering_nb(ONode on[], Graph &gr, int node_num_from)
             //itv測定
             caliculate_indirect_trust_value(on, gr, node_num_from, j);
             //最終的な信頼値測定
-            double tv = cal_get_trust_value(on, node_num_from, j);
+            long double tv = cal_get_trust_value(on, node_num_from, j);
             if (tv <= threshold) //信頼値が閾値以下の場合
             {
                 //constを変更しようとしている
@@ -641,7 +641,7 @@ bool IsOneHopNeighbor(Graph &gr, int node_num1, int node_num2)
 }
 
 //ダイクストラ法
-void dijkstra_etx(const Graph &gr, int s, vector<double> &dis)
+void dijkstra_etx(const Graph &gr, int s, vector<long double> &dis)
 {
     dis.resize(N, INF);
     priority_queue<P, vector<P>, greater<P>> pq; // 「仮の最短距離, 頂点」が小さい順に並ぶ
@@ -682,7 +682,7 @@ void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst)
         if (seen[dst] == true) //到達可能の場合
         {
             //ETXを使って優先度キューに入れるようなことをしたい
-            double to_etx = 0.0;
+            long double to_etx = 0.0;
             dijkstra_etx(gr, num_edge.to, cs);                 //num_edge.to から宛先までのetxを求めている
             to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //sourceから宛先へのetx
             cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
@@ -720,7 +720,7 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                 if (seen[dst] == true) //到達可能の場合
                 {
                     //ETXを使って優先度キューに入れるようなことをしたい
-                    double to_etx = 0.0;
+                    long double to_etx = 0.0;
                     dijkstra_etx(gr, num_edge.to, cs);                 //num_edge.to から宛先までのetxを求めている
                     to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //source(送信元ではない)から宛先へのetx
                     cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
@@ -831,10 +831,10 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
             else //重複を避けるためパケットをドロップ
             {
                 cout << "Node " << node_num << " Drop packet " << packet_num << " to prevent duplicate (to Node" << num_edge.to << endl;
-                WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+                WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
                 if (mode == 3) //提案手法あり
                 {
-                    WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+                    WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
                 }
             }
         } //すでに優先度の高いノードが送信している場合
@@ -842,11 +842,11 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
         {
             cout << "Node " << node_num << " Drop packet " << packet_num << " to prevent duplicate (to Node" << num_edge.to << endl;
             WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
-            WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+            //WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
             if (mode == 3) //提案手法あり
             {
                 WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
-                WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+                //WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
             }
         }
         //que.pop();
@@ -889,11 +889,11 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
             cout << "Node " << num_edge.to << " ignoring packet " << packet_num << " due to duplicate" << endl;
             //SendFromlessに書く
             WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
-            WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+            //WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
             if (mode == 3) //提案手法あり
             {
                 WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
-                WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+                //WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
             }
         }
         //que.pop();
@@ -939,7 +939,7 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
         {
             CalTrust_and_Filtering_nb(on, gr, node_num_send); //信頼値の計算と結果によるフィルタリング
             round_set_next();                                 //ラウンドを1進める
-            cntint_flush_all(on);                             //インタラクション数のリセット
+            cntint_flush_nb(on, gr, node_num_send);           //インタラクション数のリセット
         }
     }
 }
@@ -1026,11 +1026,16 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
     tmp_pq_onehop_fromsource = pq_onehop_fromsource;
     int one_hop_number = pq_onehop_fromsource.size();
     int cnt = 0; //送信元から1ホップを数えるための変数
+    //ラウンド，インタラクション数をリセットしておく
+    //send_round = 0;
+    //cntint_flush_all(on);
     //whileに変える
     while (cnt != one_hop_number) //送信元から1hopノードのブロードキャストが終了しているか
     {
         int highest = pq_onehop_fromsource.top().second; //最も優先度が高いノードのノード番号
         //優先度キューのループ
+        send_round = 0; //送信ラウンドのリセット
+        cntint_flush_all(on);
         while (!pq_onehop_fromsource.empty())
         {
             int node_num = pq_onehop_fromsource.top().second; //ノード番号(優先度順)
@@ -1058,8 +1063,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
                         SendFromHighestPrior(gr, n, on, node_num, num_edge, packet_num); //n[node_num].q);
                     }                                                                    //end if
                     //n[node_num].q = tmp; //退避していたキューの中身をもとに戻す
-                    send_round = 0; //送信ラウンドのリセット
-                }                   //end for
+                } //end for
                 n[node_num].q.pop();
             } //end while
             //1hopの転送が完了したかどうかの配列をtrue
@@ -1112,6 +1116,8 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
         {
             //if (checked[pq_intermediate[i].top().second] == false) //チェック済みでない
             //{
+            send_round = 0; //送信ラウンドのリセット
+            cntint_flush_all(on);
             int node_num_sev = pq_intermediate[i].top().second; //ノード番号を取得
             //優先度を表示
             //数字(size)が大きいほど高い優先度
@@ -1136,7 +1142,6 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
                         SendFromHighestPrior(gr, n, on, node_num_sev, num_edge, pakcet_num);
                     } //end if
                     //n[node_num_sev].q = tmp; //退避していたキューの中身をもとに戻す
-                    send_round = 0; //送信ラウンドのリセット
                 }
                 n[node_num_sev].q.pop();
             }
@@ -1267,8 +1272,8 @@ void simulate_with_Suggest_with_attack()
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    //edge_set(g);
-    edge_set_from_file(g);
+    edge_set(g);
+    //edge_set_from_file(g);
     Node node[N];
     ONode obs_node[N];
     //攻撃ノードの情報を追加
@@ -1403,7 +1408,7 @@ void get_detect_rate()
             }
         }
     }
-    double detection_rate = (double)((double)cnt_of_detected / (double)number_of_malnodes);
+    long double detection_rate = (long double)((long double)cnt_of_detected / (long double)number_of_malnodes);
     cout << "Detection Rate: " << detection_rate << endl;
     for (int i = 0; i < N; i++)
     {
@@ -1420,8 +1425,8 @@ void get_detect_rate()
 //PDRの表示
 void show_pdr(Node node[])
 {
-    double recv = count(node[N - 1].recvmap, node[N - 1].recvmap + numberofpackets, true);
-    recv /= (double)(numberofpackets);
+    long double recv = count(node[N - 1].recvmap, node[N - 1].recvmap + numberofpackets, true);
+    recv /= (long double)(numberofpackets);
     cout << "PDR: " << recv << endl;
 }
 
@@ -1441,7 +1446,7 @@ void edge_set_from_file(Graph &gr)
         return;
     }
     int from, to;
-    double cost;
+    long double cost;
     while (ifs >> from >> to >> cost)
     {
         gr[from].push_back(Edge(to, cost));
@@ -1494,7 +1499,7 @@ int main(void)
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
-    set_simulate_mode(2);
+    set_simulate_mode(3);
     simulate();
     return 0;
 }
