@@ -249,6 +249,22 @@ void cntint_flush_all(ONode on[]) //, Graph &gr)
         }
     }
 }
+
+void cntint_flush_nb(ONode on[], Graph &gr, int node_num_from)
+{
+    //from周辺のノードのインタラクション数をリセット
+    for (auto num_edge : gr[node_num_from])
+    {
+        for (auto num_v : gr[node_num_from])
+        {
+            if (num_edge.to != num_v.to)
+            {
+                cntint_flush(on, num_edge.to, num_v.to);
+            }
+        }
+    }
+}
+
 //dtvを，そのノード(node_num_to)について計算し，セットする
 //node_num_from...観察するノード
 //node_num_to...観察されるノード
@@ -769,135 +785,136 @@ void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, i
 //node_num : 送信元ノード番号
 //num_edge : 送信先を取得
 //tmp_pq_onehop... 自分より優先度が高いノードの番号を取得する
-
-void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource, int node_num, Edge num_edge, queue<int> que)
+//packetごとに変更した
+void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource, int node_num, Edge num_edge, int packet_num) //queue<int> que)
 {
     priority_queue<P, vector<P>, greater<P>> tmp2_pq_onehop_fromsource = tmp_pq_onehop_fromsource;
-    while (!que.empty())
+    //while (!que.empty())
+    //{
+    if (tmp2_pq_onehop_fromsource.top().second != node_num) //退避した優先度キューのインデックスを調べる
     {
-        if (tmp2_pq_onehop_fromsource.top().second != node_num) //退避した優先度キューのインデックスを調べる
+        //自分より優先度の高いノード番号ごとにループするため，送信優先度のキューを退避
+        //自分より優先度が高いノードが送信済みでないか
+        //受信に失敗していたと考えられるとき
+        //自分より優先度が高いノードが送信に失敗していたとき
+        if (n[tmp2_pq_onehop_fromsource.top().second].sendmap[packet_num] == false)
+        // || (n[num_edge.to].recvmap[que.front()] == false && n[tmp2_pq_onehop_fromsource.top().second].sendmap[que.front()] == false))
         {
-            //自分より優先度の高いノード番号ごとにループするため，送信優先度のキューを退避
-            //自分より優先度が高いノードが送信済みでないか
-            //受信に失敗していたと考えられるとき
-            //自分より優先度が高いノードが送信に失敗していたとき
-            if (n[tmp2_pq_onehop_fromsource.top().second].sendmap[que.front()] == false)
-            // || (n[num_edge.to].recvmap[que.front()] == false && n[tmp2_pq_onehop_fromsource.top().second].sendmap[que.front()] == false))
+            //そのパケットを宛先（最終的な宛先とは異なる）が受信していないとき
+            if (n[num_edge.to].recvmap[packet_num] == false)
             {
-                //そのパケットを宛先（最終的な宛先とは異なる）が受信していないとき
-                if (n[num_edge.to].recvmap[que.front()] == false)
+                //送信成功
+                if (rnd.randBool(num_edge.tsuccess_rate))
                 {
-                    //送信成功
-                    if (rnd.randBool(num_edge.tsuccess_rate))
-                    {
-                        //sendmapを成功に変える
-                        WhenSendPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
-                        //パケットの重複判定をする
-                        WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
-                        //modeで信頼値測定を行うか行わないかを切り替える
-                        BlackholeAttackWithmode(gr, n, on, node_num, num_edge.to, que.front());
-                        //to do
-                        //エッジを調べる
-                        //成功or重複をnode_numに通知
-                        //成功or重複をnode_numに通知
-                    }
-                    else //失敗
-                    {
-                        //sendmapを失敗に変える
-                        WhenSendPacketFal(gr, n, on, num_edge.to, node_num, que.front());
-                        WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
-                        //to do
-                        //エッジを調べる
-                        //失敗をnode_numに通知
-                        //失敗を周辺ノードに通知
-                    }
+                    //sendmapを成功に変える
+                    WhenSendPacketSuc(gr, n, on, num_edge.to, node_num, packet_num);
+                    //パケットの重複判定をする
+                    WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, packet_num);
+                    //modeで信頼値測定を行うか行わないかを切り替える
+                    BlackholeAttackWithmode(gr, n, on, node_num, num_edge.to, packet_num);
+                    //to do
+                    //エッジを調べる
+                    //成功or重複をnode_numに通知
+                    //成功or重複をnode_numに通知
                 }
-                else //重複を避けるためパケットをドロップ
+                else //失敗
                 {
-                    cout << "Node " << node_num << " Drop packet " << que.front() << " to prevent duplicate (to Node" << num_edge.to << endl;
-                    WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
-                    if (mode == 3) //提案手法あり
-                    {
-                        WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, que.front());
-                    }
-                }
-            } //すでに優先度の高いノードが送信している場合
-            else
-            {
-                cout << "Node " << node_num << " Drop packet " << que.front() << " to prevent duplicate (to Node" << num_edge.to << endl;
-                WhenSendPacketFal(gr, n, on, num_edge.to, node_num, que.front());
-                WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
-                if (mode == 3) //提案手法あり
-                {
-                    WhenSendPacketDup(gr, n, on, num_edge.to, node_num, que.front());
-                    WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, que.front());
+                    //sendmapを失敗に変える
+                    WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+                    WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+                    //to do
+                    //エッジを調べる
+                    //失敗をnode_numに通知
+                    //失敗を周辺ノードに通知
                 }
             }
-            que.pop();
-            tmp2_pq_onehop_fromsource.pop(); //パケットについての処理終なのでノード番号を更新する
-        }
-        else //ノード番号が等しい場合はそのパケットについては調べ終わったのでcontinue
+            else //重複を避けるためパケットをドロップ
+            {
+                cout << "Node " << node_num << " Drop packet " << packet_num << " to prevent duplicate (to Node" << num_edge.to << endl;
+                WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+                if (mode == 3) //提案手法あり
+                {
+                    WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+                }
+            }
+        } //すでに優先度の高いノードが送信している場合
+        else
         {
-            //cout << "continue : queue " << que.front() << " node num " << tmp2_pq_onehop_fromsource.top().second << endl;
-            //que.pop();
-            tmp2_pq_onehop_fromsource = tmp_pq_onehop_fromsource; //番号をリセット(priorityqueueをもとに戻す)
-        }                                                         //end while for pq
+            cout << "Node " << node_num << " Drop packet " << packet_num << " to prevent duplicate (to Node" << num_edge.to << endl;
+            WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+            WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+            if (mode == 3) //提案手法あり
+            {
+                WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+                WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+            }
+        }
+        //que.pop();
+        tmp2_pq_onehop_fromsource.pop(); //パケットについての処理終なのでノード番号を更新する
+    }
+    else //ノード番号が等しい場合はそのパケットについては調べ終わったのでcontinue
+    {
+        //cout << "continue : queue " << que.front() << " node num " << tmp2_pq_onehop_fromsource.top().second << endl;
+        //que.pop();
+        tmp2_pq_onehop_fromsource = tmp_pq_onehop_fromsource; //番号をリセット(priorityqueueをもとに戻す)
+    }                                                         //end while for pq
 
-    } //end while for que
+    //} //end while for que
 }
 
 //node_num...送信元
 //num_edge.to...宛先
 //優先度が高いノードからの送信
-void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge num_edge, queue<int> que)
+//packetごとのループに変更した
+void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge num_edge, int packet_num) //queue<int> que)
 {
 
-    while (!que.empty())
+    //while (!que.empty())
+    //{
+    if (rnd.randBool(num_edge.tsuccess_rate))
     {
-        if (rnd.randBool(num_edge.tsuccess_rate))
+        //パケットの重複判定をする
+        if (n[num_edge.to].recvmap[packet_num] == false) //まだキューの先頭のパケットを受信していない場合
         {
-            //パケットの重複判定をする
-            if (n[num_edge.to].recvmap[que.front()] == false) //まだキューの先頭のパケットを受信していない場合
-            {
-                //sendmapの更新
-                WhenSendPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
-                //受信時処理をWhenRecvに移動した
-                WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, que.front());
-                //modeで攻撃時に観察を行うかを切り替える
-                BlackholeAttackWithmode(gr, n, on, node_num, num_edge.to, que.front());
-            }
-            else
-            {
-                //重複時のメッセージ
-                cout << "Node " << num_edge.to << " ignoring packet " << que.front() << " due to duplicate" << endl;
-                //SendFromlessに書く
-                WhenSendPacketFal(gr, n, on, num_edge.to, node_num, que.front());
-                WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
-                if (mode == 3) //提案手法あり
-                {
-                    WhenSendPacketDup(gr, n, on, num_edge.to, node_num, que.front());
-                    WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, que.front());
-                }
-            }
-            que.pop();
-            //to do
-            //エッジを調べる
-            //成功or重複をnode_numに通知
-            //成功or重複を周辺ノードへ通知
+            //sendmapの更新
+            WhenSendPacketSuc(gr, n, on, num_edge.to, node_num, packet_num);
+            //受信時処理をWhenRecvに移動した
+            WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, packet_num);
+            //modeで攻撃時に観察を行うかを切り替える
+            BlackholeAttackWithmode(gr, n, on, node_num, num_edge.to, packet_num);
         }
         else
         {
-            //sendmapを失敗に更新
-            WhenSendPacketFal(gr, n, on, num_edge.to, node_num, que.front());
-            //受信失敗時処理をRecvpacketFalに移動
-            WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, que.front());
-            que.pop();
-            //to do
-            //エッジを調べる
-            //失敗をnode_numに通知
-            //失敗を周辺ノードに通知
-        } //end if
-    }     //end while
+            //重複時のメッセージ
+            cout << "Node " << num_edge.to << " ignoring packet " << packet_num << " due to duplicate" << endl;
+            //SendFromlessに書く
+            WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+            WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+            if (mode == 3) //提案手法あり
+            {
+                WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+                WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+            }
+        }
+        //que.pop();
+        //to do
+        //エッジを調べる
+        //成功or重複をnode_numに通知
+        //成功or重複を周辺ノードへ通知
+    }
+    else
+    {
+        //sendmapを失敗に更新
+        WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+        //受信失敗時処理をRecvpacketFalに移動
+        WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+        //que.pop();
+        //to do
+        //エッジを調べる
+        //失敗をnode_numに通知
+        //失敗を周辺ノードに通知
+    } //end if
+    //}     //end while
 }
 
 //送信mapをtrueにする関数
@@ -1020,31 +1037,37 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             cout << "Node " << node_num << " priority " << pq_onehop_fromsource.size() << endl;
-            for (auto num_edge : gr[node_num]) //num_edge...接続しているエッジ
+            //キューが空になるまでdo
+            while (!n[node_num].q.empty())
             {
-                //送信先のノードのETXを計算する
-                //priority_queueの配列から次の送信ノードを取得
-                //実際送信するところ
-                queue<int> tmp = n[node_num].q; //キューの中身をいったん退避(ブロードキャストのため)
-                if (node_num != highest)        //もっとも優先度の高いノードでない場合
+                int packet_num = n[node_num].q.front(); //パケット番号をコピー
+                for (auto num_edge : gr[node_num])      //num_edge...接続しているエッジ
                 {
-                    //優先度がより低い場合
-                    SendFromlessPrior(gr, n, on, tmp_pq_onehop_fromsource, node_num, num_edge, n[node_num].q);
-                }
-                else //最も優先度が高い場合
-                {
-                    //優先度が高いノードから送信
-                    SendFromHighestPrior(gr, n, on, node_num, num_edge, n[node_num].q);
-                }                    //end if
-                n[node_num].q = tmp; //退避していたキューの中身をもとに戻す
-            }                        //end for
+                    //送信先のノードのETXを計算する
+                    //priority_queueの配列から次の送信ノードを取得
+                    //実際送信するところ
+                    //queue<int> tmp = n[node_num].q; //キューの中身をいったん退避(ブロードキャストのため)
+                    if (node_num != highest) //もっとも優先度の高いノードでない場合
+                    {
+                        //優先度がより低い場合
+                        SendFromlessPrior(gr, n, on, tmp_pq_onehop_fromsource, node_num, num_edge, packet_num); //n[node_num].q);
+                    }
+                    else //最も優先度が高い場合
+                    {
+                        //優先度が高いノードから送信
+                        SendFromHighestPrior(gr, n, on, node_num, num_edge, packet_num); //n[node_num].q);
+                    }                                                                    //end if
+                    //n[node_num].q = tmp; //退避していたキューの中身をもとに戻す
+                    send_round = 0; //送信ラウンドのリセット
+                }                   //end for
+                n[node_num].q.pop();
+            } //end while
             //1hopの転送が完了したかどうかの配列をtrue
             checked[pq_onehop_fromsource.top().second] = true;
             pq_onehop_fromsource.pop();
         }
         cnt++;
     }
-
     //幅優先探索でノードのホップ数を求めてノードの番号を取得する
     //(送信元から2hop以上)
 
@@ -1073,8 +1096,6 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
     int now_hopnum = 1;
 
     int mxhop = GetMaxHop(); //ホップ数(最大)
-                             //while (cnt < N - 1)
-                             //{
     //送信元から2ホップ以上
     for (int i = 1; i < mxhop; i++)
     {
@@ -1095,23 +1116,29 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             cout << "Node " << node_num_sev << " priority " << pq_intermediate[i].size() << endl;
-            for (auto num_edge : gr[node_num_sev]) //num_edge...接続しているエッジ
+            while (!n[node_num_sev].q.empty())
             {
-                //送信先のノードのETXを計算する
-                //priority_queueの配列から次の送信ノードを取得
-                //実際送信するところ
-                queue<int> tmp = n[node_num_sev].q; //キューの中身をいったん退避(ブロードキャストのため)
-                if (node_num_sev != highest_sev)    //もっとも優先度の高いノードでない場合
+                int pakcet_num = n[node_num_sev].q.front();
+                for (auto num_edge : gr[node_num_sev]) //num_edge...接続しているエッジ
                 {
-                    //優先度がより低い場合
-                    SendFromlessPrior(gr, n, on, tmp_pq_intermediate, node_num_sev, num_edge, n[node_num_sev].q);
+                    //送信先のノードのETXを計算する
+                    //priority_queueの配列から次の送信ノードを取得
+                    //実際送信するところ
+                    //queue<int> tmp = n[node_num_sev].q; //キューの中身をいったん退避(ブロードキャストのため)
+                    if (node_num_sev != highest_sev) //もっとも優先度の高いノードでない場合
+                    {
+                        //優先度がより低い場合
+                        SendFromlessPrior(gr, n, on, tmp_pq_intermediate, node_num_sev, num_edge, pakcet_num);
+                    }
+                    else //最も優先度が高い場合
+                    {
+                        //優先度が高いノードから送信
+                        SendFromHighestPrior(gr, n, on, node_num_sev, num_edge, pakcet_num);
+                    } //end if
+                    //n[node_num_sev].q = tmp; //退避していたキューの中身をもとに戻す
+                    send_round = 0; //送信ラウンドのリセット
                 }
-                else //最も優先度が高い場合
-                {
-                    //優先度が高いノードから送信
-                    SendFromHighestPrior(gr, n, on, node_num_sev, num_edge, n[node_num_sev].q);
-                }                        //end if
-                n[node_num_sev].q = tmp; //退避していたキューの中身をもとに戻す
+                n[node_num_sev].q.pop();
             }
             checked[pq_intermediate[i].top().second] = true;
             pq_intermediate[i].pop();

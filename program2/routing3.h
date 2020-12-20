@@ -163,6 +163,7 @@ void DecFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_sen
 void DecFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
 void cntint_flush(ONode on[], int node_num_from, int node_num_to);
 void cntint_flush_all(ONode on[]);
+void cntint_flush_nb(ONode on[], Graph &gr, int node_num_from);
 void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to);
 void caliculate_indirect_trust_value(ONode on[], Graph &g, int node_num_from, int node_num_to);
 double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to);
@@ -188,8 +189,8 @@ void dijkstra_etx(const Graph &gr, int s, vector<double> &dis);
 void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst);
 void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst);
 void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, int dst);
-void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource, int node_num, Edge num_edge, queue<int> que);
-void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge num_edge, queue<int> que);
+void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector<P>, greater<P>> tmp_pq_onehop_fromsource, int node_num, Edge num_edge, int packet_num); //queue<int> que);
+void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge num_edge, int packet_num);                                                                 //queue<int> que);
 void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
 void WhenSendPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
 void WhenSendPacketDup(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num);
