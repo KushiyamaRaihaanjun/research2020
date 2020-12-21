@@ -395,7 +395,7 @@ void CalTrust_and_Filtering_nb(ONode on[], Graph &gr, int node_num_from)
 }
 
 //あるノードが送信中における，前ホップノードからの信頼値の測定
-void CaltrustWhileSending(ONode on[], Graph &gr, int node_num_to)
+void CalTrustWhileSending(ONode on[], Graph &gr, int node_num_to)
 {
     for (int i = 0; i < N; i++)
     {
@@ -553,7 +553,7 @@ void AttackerSet()
     //攻撃ノードのノード番号を登録しておく
     for (int i = 0; i < number_of_malnodes; i++)
     {
-        attacker_array[i] = 4;
+        attacker_array[i] = 5;
     }
 }
 
@@ -952,7 +952,7 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
         if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
         {
             CalTrust_and_Filtering_nb(on, gr, node_num_send); //信頼値の計算と結果によるフィルタリング
-            CaltrustWhileSending(on, gr, node_num_send);
+            //CalTrustWhileSending(on, gr, node_num_send);      //前ホップノードからの信頼値測定
             round_set_next();                       //ラウンドを1進める
             cntint_flush_nb(on, gr, node_num_send); //インタラクション数のリセット
         }
@@ -1049,11 +1049,11 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
     {
         int highest = pq_onehop_fromsource.top().second; //最も優先度が高いノードのノード番号
         //優先度キューのループ
-        send_round = 0; //送信ラウンドのリセット
-        cntint_flush_nb(on, gr, highest);
         while (!pq_onehop_fromsource.empty())
         {
             int node_num = pq_onehop_fromsource.top().second; //ノード番号(優先度順)
+            send_round = 0;                                   //送信ラウンドのリセット
+            cntint_flush_nb(on, gr, node_num);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             cout << "Node " << node_num << " priority " << pq_onehop_fromsource.size() << endl;
@@ -1131,9 +1131,10 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
         {
             //if (checked[pq_intermediate[i].top().second] == false) //チェック済みでない
             //{
-            send_round = 0; //送信ラウンドのリセット
-            cntint_flush_nb(on, gr, highest_sev);
+
             int node_num_sev = pq_intermediate[i].top().second; //ノード番号を取得
+            send_round = 0;                                     //送信ラウンドのリセット
+            cntint_flush_nb(on, gr, node_num_sev);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             cout << "Node " << node_num_sev << " priority " << pq_intermediate[i].size() << endl;
