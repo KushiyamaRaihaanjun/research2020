@@ -89,7 +89,7 @@ struct ONode
     //double dtv[1000];
     vector<double> dtv; //サイズを決めてないとセグメンテーションフォルトになる(vector)
     double itv;
-    double theta[N];
+    double lambda[N];
     //dtv配列をリサイズする
     void arrayresize()
     {
@@ -156,8 +156,8 @@ struct ONode
 /*プロトタイプ宣言*/
 void num_to_three(int x);
 void num_to_bin(int x);
-double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to);
-double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to);
+double ds_trust(ONode on[], Graph &gr, int node_num_from, int node_num_to);
+double ds_all(ONode on[], Graph &gr, int node_num_from, int node_num_to);
 void cnt_inter(ONode on[], int node_num_from, int node_num_to, int ev_val);
 void CntSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
 void CntFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);

@@ -25,7 +25,7 @@ void num_to_bin(int x)
         power2 *= 2;
     }
 }
-double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to)
+double ds_trust(ONode on[], Graph &gr, int node_num_from, int node_num_to)
 {
     /*bitset か，bit 全探索*/
     /*HHH ,HHU ... などの列挙をやる*/
@@ -34,11 +34,29 @@ double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to)
     double val2 = 0.0; //返り値
     //vector<bool> bitval(gr[node_num].size()); //bitsetの代わりに使いたい,size
     int observer_node_size = gr[node_num_from].size() - 1; //これでOK
-    //どのノードともリンクがなかった場合、しきい値を返す
+    //どのノードともリンクがなかった場合、0.0を返す
+    //証拠を収集するノードが悪意のノードのみだったときの対策/////
+    for (auto node_num : gr[node_num_from])
+    {
+        if (FindFromMaltable(node_num_from, node_num.to) == true)
+        {
+            observer_node_size--;
+        }
+    }
+    //リンクがない場合1.0を返す
+    //各ノードに関してtheta(lambda)を変更する（注意）
+    //observerノードが1つもなかったら重みを1.0に変更
     if (observer_node_size <= 0)
     {
-        return threshold;
+        on[node_num_to].lambda[node_num_from] = 1.0;
+        return 0.0;
     }
+    else
+    {
+        on[node_num_to].lambda[node_num_from] = 0.5;
+    }
+    //////////////////////////////////////////////////////////
+
     //グラフからノード番号を取得する必要がありそう
     //添え字を何とかする
     /*
@@ -55,7 +73,7 @@ double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to)
     vector<int> nb_nodes; //(observer_node_size);
     for (auto num_edge : gr[node_num_from])
     {
-        if (num_edge.to != node_num_to)
+        if (num_edge.to != node_num_to && !FindFromMaltable(node_num_from, num_edge.to))
         {
             nb_nodes.push_back(num_edge.to);
         }
@@ -74,11 +92,11 @@ double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to)
                 //{
                 if (binarray[j] == 0)
                 {
-                    val *= x.dsarray[nb_nodes[j]][3]; //0+3だからなくてもいい
+                    val *= on[node_num_to].dsarray[nb_nodes[j]][3]; //0+3だからなくてもいい
                 }
                 else
                 {
-                    val *= x.dsarray[nb_nodes[j]][1];
+                    val *= on[node_num_to].dsarray[nb_nodes[j]][1];
                 }
                 //}
             }
@@ -91,7 +109,7 @@ double ds_trust(ONode x, Graph &gr, int node_num_from, int node_num_to)
 }
 
 //すべての場合を計算する
-double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to)
+double ds_all(ONode on[], Graph &gr, int node_num_from, int node_num_to)
 {
     double all_val = 0.0;
     double val = 1.0;
@@ -118,21 +136,22 @@ double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to)
         }
     }
     //リンクがない場合1.0を返す
-    //thetaを変更する（注意）
+    //各ノードに関してtheta(lambda)を変更する（注意）
+    //observerノードが1つもなかったら重みを1.0に変更
     if (observer_node_size <= 0)
     {
-        theta = 1.0;
+        on[node_num_to].lambda[node_num_from] = 1.0;
         return 1.0;
     }
     else
     {
-        theta = 0.5;
+        on[node_num_to].lambda[node_num_from] = 0.5;
     }
     ///////////////////////////////////////////////////////////
     vector<int> nb_nodes; //(observer_node_size);
     for (auto num_edge : gr[node_num_from])
     {
-        if (num_edge.to != node_num_to)
+        if (num_edge.to != node_num_to && !FindFromMaltable(node_num_from, num_edge.to))
         {
             nb_nodes.push_back(num_edge.to);
         }
@@ -159,7 +178,7 @@ double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to)
             {
                 //if (nb_nodes[j] != node_num_to) //観測対象のノード番号と等しくない場合
                 //{
-                val *= x.dsarray[nb_nodes[j]][threearray[j] + 1];
+                val *= on[node_num_to].dsarray[nb_nodes[j]][threearray[j] + 1];
                 //}
             }
             val2 += val;
@@ -301,14 +320,15 @@ void caliculate_indirect_trust_value(ONode on[], Graph &g, int node_num_from, in
     //間接的にノードに観察させる
     on[node_num_to].set_itv_rel(on, g, node_num_from, node_num_to);
     //dempster-shafer理論の計算
-    on[node_num_to].itv = ds_trust(on[node_num_to], g, node_num_from, node_num_to) / ds_all(on[node_num_to], g, node_num_from, node_num_to);
+    on[node_num_to].itv = ds_trust(on, g, node_num_from, node_num_to) / ds_all(on, g, node_num_from, node_num_to);
 }
 
 //最終的な信頼値測定
+//重みは各ノードごとに異なる
 double cal_get_trust_value(ONode on[], int node_num_from, int node_num_to)
 {
     double trust_value;
-    trust_value = theta * on[node_num_to].dtv[node_num_from] + (1.0 - theta) * on[node_num_to].itv;
+    trust_value = on[node_num_to].lambda[node_num_from] * on[node_num_to].dtv[node_num_from] + (1.0 - on[node_num_to].lambda[node_num_from]) * on[node_num_to].itv;
     return trust_value;
 }
 
@@ -367,6 +387,11 @@ void CalTrust_and_Filtering_nb(ONode on[], Graph &gr, int node_num_from)
     for (auto node_num : gr[node_num_from])
     {
         caliculate_and_set_dtv(on, node_num_from, node_num.to);
+        //dtvで悪意ノードと認識する？
+        if (on[node_num.to].dtv[node_num_from] + eps <= threshold)
+        {
+            RegistTable(node_num.to, node_num_from);
+        }
     }
     for (int i = 0; i < N; i++)
     {
@@ -434,6 +459,17 @@ void init_dtv(ONode on[], int node_num_from, int node_num_to)
     on[node_num_to].dtv[node_num_from] = 0.6;
 }
 
+//ONodeの重みを初期化
+void Init_lambda(ONode on[])
+{
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            on[j].lambda[i] = 0.5;
+        }
+    }
+}
 //ONodeのdtv/itv配列をリセットする
 void array_ONodeinit(ONode on[])
 {
@@ -449,6 +485,8 @@ void array_ONodeinit(ONode on[])
             init_dtv(on, i, j);
         }
     }
+    //重みをリセット
+    Init_lambda(on);
 }
 //信頼値の更新をラウンドごとに行う関数を書く
 //配列に格納しておく
@@ -1530,7 +1568,7 @@ int main(void)
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
-    set_simulate_mode(2);
+    set_simulate_mode(3);
     simulate();
     return 0;
 }
