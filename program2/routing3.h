@@ -89,6 +89,7 @@ struct ONode
     //double dtv[1000];
     vector<double> dtv; //サイズを決めてないとセグメンテーションフォルトになる(vector)
     double itv;
+    double theta[N];
     //dtv配列をリサイズする
     void arrayresize()
     {

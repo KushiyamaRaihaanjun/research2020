@@ -109,11 +109,26 @@ double ds_all(ONode x, Graph &gr, int node_num_from, int node_num_to)
     //ds_trustと同じ
     map<int, int> setcount;
     int observer_node_size = gr[node_num_from].size() - 1;
+    //証拠を収集するノードが悪意のノードのみだったときの対策/////
+    for (auto node_num : gr[node_num_from])
+    {
+        if (FindFromMaltable(node_num_from, node_num.to) == true)
+        {
+            observer_node_size--;
+        }
+    }
     //リンクがない場合1.0を返す
+    //thetaを変更する（注意）
     if (observer_node_size <= 0)
     {
+        theta = 1.0;
         return 1.0;
     }
+    else
+    {
+        theta = 0.5;
+    }
+    ///////////////////////////////////////////////////////////
     vector<int> nb_nodes; //(observer_node_size);
     for (auto num_edge : gr[node_num_from])
     {
@@ -448,9 +463,9 @@ void array_ONodeinit(ONode on[])
 //ラウンドを増やす
 void round_set_next()
 {
-    //測定ラウンドがパケット数/step以下なら増やす
+    //測定ラウンドがmx_round未満なら増やす
     //そうでない場合0にする
-    if (send_round < (int)(numberofpackets / packet_step))
+    if (send_round < mx_round - 1)
     {
         send_round++;
     }
@@ -1515,7 +1530,7 @@ int main(void)
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
-    set_simulate_mode(3);
+    set_simulate_mode(2);
     simulate();
     return 0;
 }
