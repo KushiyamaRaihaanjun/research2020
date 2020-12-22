@@ -440,10 +440,17 @@ void CalTrustWhileSending(ONode on[], Graph &gr, int node_num_to)
     for (int i = 0; i < N; i++)
     {
         //i -> node_num_toへのリンクがある場合
-        //信頼値を測定
         if (i != node_num_to && IsLinked(gr, i, node_num_to))
         {
             CalTrust_and_Filtering_nb(on, gr, i);
+            //for (int j = 0; j < N; j++)
+            //{
+            //    //iがnode_num_toの信頼値を測定，i-j間がリンクがありjが悪意ノードでないとき
+            //    if (IsLinked(gr, i, j) == true && !FindFromMaltable(i, j))
+            //    {
+            //
+            //    }
+            //}
         }
     }
 }
@@ -589,13 +596,6 @@ void BlackholeAttackWithmode(Graph &gr, Node n[], ONode on[], int node_num, int 
         }
         //周辺ノードについてもカウントする(to do)
         //二重にカウントしている: いらない
-        //for (auto edge_tr : gr[node_num])
-        //{
-        //    if (edge_tr.to != num_edge_to)
-        //    {
-        //        WhenRecvPacketFal(gr, n, on, num_edge_to, edge_tr.to, tmp_packet_num);
-        //    }
-        //}
     }
 }
 
@@ -606,7 +606,7 @@ void AttackerSet()
     //攻撃ノードのノード番号を登録しておく
     for (int i = 0; i < number_of_malnodes; i++)
     {
-        attacker_array[i] = 5;
+        attacker_array[i] = 3;
     }
 }
 
@@ -1005,9 +1005,9 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
         if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
         {
             CalTrust_and_Filtering_nb(on, gr, node_num_send); //信頼値の計算と結果によるフィルタリング
-            //CalTrustWhileSending(on, gr, node_num_send);      //前ホップノードからの信頼値測定
-            round_set_next();                       //ラウンドを1進める
-            cntint_flush_nb(on, gr, node_num_send); //インタラクション数のリセット
+            CalTrustWhileSending(on, gr, node_num_send);      //前ホップノードからの信頼値測定
+            round_set_next();                                 //ラウンドを1進める
+            cntint_flush_nb(on, gr, node_num_send);           //インタラクション数のリセット
         }
     }
 }
@@ -1052,14 +1052,6 @@ void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     if (mode >= 2) //信頼値測定を行うかをモードで分岐する
     {
         CntSuc(gr, n, on, node_num_recv, node_num_send); //成功をカウント
-        //宛先がpacket_step個パケットを受信したときの処理
-        //おかしいのでコメント化
-        //if (d == node_num_recv && count(n[d].recvmap, n[d].recvmap + numberofpackets, true) == packet_step * (send_round + 1))
-        //{
-        //    CalTrust_and_Filtering(on, gr); //信頼値の計算と結果によるフィルタリング
-        //    round_set_next();               //ラウンドを1進める
-        //    cntint_flush_all(on);           //インタラクション数のリセット
-        //}
     }
 }
 
@@ -1568,7 +1560,7 @@ int main(void)
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
-    set_simulate_mode(3);
+    set_simulate_mode(2);
     simulate();
     return 0;
 }
