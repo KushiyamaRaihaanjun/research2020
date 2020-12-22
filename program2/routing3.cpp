@@ -442,18 +442,57 @@ void CalTrustWhileSending(ONode on[], Graph &gr, int node_num_to)
         //i -> node_num_toへのリンクがある場合
         if (i != node_num_to && IsLinked(gr, i, node_num_to))
         {
-            CalTrust_and_Filtering_nb(on, gr, i);
-            //for (int j = 0; j < N; j++)
-            //{
-            //    //iがnode_num_toの信頼値を測定，i-j間がリンクがありjが悪意ノードでないとき
-            //    if (IsLinked(gr, i, j) == true && !FindFromMaltable(i, j))
-            //    {
-            //
-            //    }
-            //}
+            for (auto num_edge : gr[i])
+            {
+                //i->num_edge.toへの直接的な信頼値の測定
+                caliculate_and_set_dtv(on, i, num_edge.to);
+                if (on[num_edge.to].dtv[i] + eps <= threshold)
+                {
+                    RegistTable(num_edge.to, i);
+                }
+            }
+            for (int j = 0; j < N; j++)
+            {
+                for (int k = 0; k < N; k++)
+                {
+                    //直接的なノード信頼値の計算
+                    //自分ではない周りのノード...j
+                    //測定対象...k
+                    if (i != j && i != k && IsLinked(gr, i, j) == true && IsLinked(gr, i, k) == true)
+                    {
+                        caliculate_and_set_dtv(on, i, j);
+                        //dtvがしきい値以下の場合
+                        //i,jが直接つながっているまたはあるノードの共通の1hopノードである場合//この条件は消した
+                        if (on[k].dtv[j] + eps <= threshold)
+                        {
+                            RegistTable(k, j);
+                        }
+                    }
+                }
+            }
+            for (int j = 0; j < N; j++)
+            {
+                //間接的なノード信頼値の計算
+                //d-sでエラー出そう
+                //i-j間で直接(1ホップの)リンクがあるかを判定する
+                if (i != j && IsLinked(gr, i, j) == true)
+                {
+                    //itv測定
+                    caliculate_indirect_trust_value(on, gr, i, j);
+                    //最終的な信頼値測定
+                    double tv = cal_get_trust_value(on, i, j);
+                    if (tv + eps <= threshold) //信頼値が閾値以下の場合
+                    {
+                        //constを変更しようとしている
+                        //RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
+                        RegistTable(j, i); //まだ登録されていない場合テーブルに登録する
+                    }
+                }
+            }
         }
     }
 }
+//end
 
 //直接的・間接的な信頼値を0.6で初期化
 void init_itv(ONode on[], int node_num_to)
