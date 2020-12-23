@@ -299,6 +299,22 @@ void cntint_flush_nb(ONode on[], Graph &gr, int node_num_from)
     }
 }
 
+//前ホップノードのインタラクションをリセット
+void cntint_flush_prevhop(ONode on[], Graph &gr, int node_num_to)
+{
+    //i->jかつi->node_num_to
+    for (int i = 0; i < N; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            if (IsLinked(gr, i, node_num_to) && IsLinked(gr, j, node_num_to))
+            {
+                cntint_flush(on, i, node_num_to);
+            }
+        }
+    }
+}
+
 //dtvを，そのノード(node_num_to)について計算し，セットする
 //node_num_from...観察するノード
 //node_num_to...観察されるノード
@@ -453,41 +469,29 @@ void CalTrustWhileSending(ONode on[], Graph &gr, int node_num_to)
             }
             for (int j = 0; j < N; j++)
             {
-                for (int k = 0; k < N; k++)
+                //直接的なノード信頼値の計算
+                //自分ではない周りのノード...j
+                //測定対象...node_num_to
+                if (i != j && node_num_to != j && IsLinked(gr, i, j) == true)
                 {
-                    //直接的なノード信頼値の計算
-                    //自分ではない周りのノード...j
-                    //測定対象...k
-                    if (i != j && i != k && IsLinked(gr, i, j) == true && IsLinked(gr, i, k) == true)
+                    caliculate_and_set_dtv(on, j, node_num_to);
+                    //dtvがしきい値以下の場合
+                    if (on[node_num_to].dtv[j] + eps <= threshold)
                     {
-                        caliculate_and_set_dtv(on, i, j);
-                        //dtvがしきい値以下の場合
-                        //i,jが直接つながっているまたはあるノードの共通の1hopノードである場合//この条件は消した
-                        if (on[k].dtv[j] + eps <= threshold)
-                        {
-                            RegistTable(k, j);
-                        }
+                        RegistTable(node_num_to, j);
                     }
                 }
             }
-            for (int j = 0; j < N; j++)
+            //間接的なノード信頼値の計算
+            //itv測定
+            caliculate_indirect_trust_value(on, gr, i, node_num_to);
+            //最終的な信頼値測定
+            double tv = cal_get_trust_value(on, i, node_num_to);
+            if (tv + eps <= threshold) //信頼値が閾値以下の場合
             {
-                //間接的なノード信頼値の計算
-                //d-sでエラー出そう
-                //i-j間で直接(1ホップの)リンクがあるかを判定する
-                if (i != j && IsLinked(gr, i, j) == true)
-                {
-                    //itv測定
-                    caliculate_indirect_trust_value(on, gr, i, j);
-                    //最終的な信頼値測定
-                    double tv = cal_get_trust_value(on, i, j);
-                    if (tv + eps <= threshold) //信頼値が閾値以下の場合
-                    {
-                        //constを変更しようとしている
-                        //RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
-                        RegistTable(j, i); //まだ登録されていない場合テーブルに登録する
-                    }
-                }
+                //constを変更しようとしている
+                //RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
+                RegistTable(node_num_to, i); //まだ登録されていない場合テーブルに登録する
             }
         }
     }
@@ -1047,6 +1051,7 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
             CalTrustWhileSending(on, gr, node_num_send);      //前ホップノードからの信頼値測定
             round_set_next();                                 //ラウンドを1進める
             cntint_flush_nb(on, gr, node_num_send);           //インタラクション数のリセット
+            cntint_flush_prevhop(on, gr, node_num_send);      //前ホップノードのインタラクションをリセットする
         }
     }
 }
@@ -1599,7 +1604,7 @@ int main(void)
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
-    set_simulate_mode(2);
+    set_simulate_mode(3);
     simulate();
     return 0;
 }

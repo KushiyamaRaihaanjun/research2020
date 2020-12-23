@@ -268,3 +268,55 @@ ORの実装・信頼値測定についてのメモ
     - commit (12/22): 送信中ノードの測定関数を作った
         - 完全にできた？
         - 攻撃ノードを変える
+- メモ(12/23)
+    - 信頼値測定あり，提案手法なし(悪意ノード:3)
+        - ノード2が悪意ノードの判定
+
+    ```
+    Node 0: malicious 3
+    Node 0: malicious 2
+    Node 1: malicious 3
+    Node 1: malicious 5
+    Node 2: malicious 3
+    Node 2: malicious 4
+    Node 2: malicious 5
+    Node 3: malicious 5
+    ```
+
+    - 信頼値測定あり，提案手法あり(悪意ノード:3)
+
+    ```
+    Node 0: malicious 3
+    Node 1: malicious 3
+    Node 2: malicious 3
+    Node 2: malicious 4
+    Node 3: malicious 5
+    ```
+
+    - 上は気にしない
+    - 結果(前ホップのカウントを減らす関数を作ったとき)
+    - 提案手法なし
+
+    ```
+    Node 0: malicious 3
+    Node 1: malicious 3
+    Node 1: malicious 4
+    Node 2: malicious 3
+    Node 2: malicious 4
+    Node 3: malicious 5
+    Node 4: malicious 5
+    Node 5: malicious 4
+    ``` 
+
+    - あり
+
+    ```
+    Node 0: malicious 3
+    Node 1: malicious 3
+    Node 1: malicious 4
+    Node 2: malicious 3
+    Node 2: malicious 4
+    Node 3: malicious 5
+    Node 4: malicious 5
+    Node 5: malicious 4
+    ```
