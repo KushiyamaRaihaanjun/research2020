@@ -655,7 +655,7 @@ void AttackerSet()
     //攻撃ノードのノード番号を登録しておく
     for (int i = 0; i < number_of_malnodes; i++)
     {
-        attacker_array[i] = 5 * i;
+        attacker_array[i] = 5;
     }
 }
 

@@ -107,8 +107,103 @@ int main(int argc, char *argv[])
     方針2
     送信元と宛先の条件から乱数を使って生成
     */
+    /*
+    方針3
+    ホップ数を5~10で用意して，ホップ数の配置を考える
+    */
+    int mx_hop = rnd(6, 11);                  //最大Hop数(5~10)
+    vector<vector<int>> nodes_array;          //ホップ数，そのホップ数におけるノード番号
+    nodes_array.resize(mx_hop);               //サイズをホップ数にする
+    nodes_array[0].push_back(0);              //0ホップは0
+    nodes_array[mx_hop - 1].push_back(N - 1); //最終ホップはN-1
+    int rest_node_num = N - 2;                //残りホップ数
+    map<int, int> node_map;
+    int tmp_rest = rest_node_num;
+    while (rest_node_num > 0)
+    {
+        for (int i = 1; i < mx_hop - 1; i++)
+        {
+            int hop_node_number = rnd(5, 7); //n hopのノード数
+            for (int j = 0; j < hop_node_number; j++)
+            {
+                int node_num = rnd(1, N - 2); //ノード番号を生成
+                if (node_map[node_num] == 0)
+                {
+                    nodes_array[i].push_back(node_num);
+                    node_map[node_num]++;
+                }
+                else
+                {
+                    j--;
+                }
+            }
+            rest_node_num -= hop_node_number; //ノード数だけ減らす
+        }
+        //終了条件はジャスト
+        if (rest_node_num != 0)
+        {
+            rest_node_num = tmp_rest;
+        }
+        else
+        {
+            break;
+        }
+    }
     map<pair<int, int>, int> nodeval; //fromとtoのペアを保持
+    int f_number = 0;
+    string f_name = "topology";
+    f_name += to_string(f_number);
+    f_name += ".txt";
     while (1)
+    {
+        ofstream out("topology1.txt");
+        for (int i = 1; i < mx_hop; i++)
+        {
+            //loop開始(エッジ数)
+            if (i <= mx_hop - 2)
+            {
+                for (int j = 0; j < 2 * nodes_array[i].size(); j++)
+                {
+                    int from = nodes_array[i - 1][rnd(nodes_array[i].size())]; //from
+                    int to = nodes_array[i][rnd(nodes_array[i].size())];       //to
+                    double rate = rnd.randDoubleRange(0.5, 0.8);               //通信成功率
+                    if (nodeval[{from, to}] == 0)                              //まだ接続していないノードのみ接続する
+                    {
+                        out << from << " " << to << " " << rate << endl;
+                        g[from].push_back(Edge(to, rate));
+                        nodeval[{from, to}]++;
+                    }
+                }
+            }
+            else
+            {
+                for (int j = 0; j < nodes_array[i - 1].size(); j++)
+                {
+                    int from = nodes_array[i - 1][j];
+                    int to = dst;
+                    double rate = rnd.randDoubleRange(0.5, 0.8);
+                    out << from << " " << to << " " << rate << endl;
+                }
+            }
+            //loop終
+        }
+        //dfsで接続性チェック
+        dfs(g, 0);
+        g.clear();
+        nodeval.clear();
+        if (seen[dst] == true)
+        {
+            out.close();
+            break;
+        }
+        else
+        {
+            out.close();
+            seen.assign(N, false);
+        }
+    }
+
+    /*while (1)
     {
         int one_hop_count = 0; //送信元から1hopのノードの数
         ofstream out("topology.txt");
@@ -162,6 +257,7 @@ int main(int argc, char *argv[])
             seen.assign(N, false); //seenをリセット
         }
     }
+    */
     //ファイル書き込み
 
     return 0;
