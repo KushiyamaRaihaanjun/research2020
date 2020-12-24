@@ -320,3 +320,31 @@ ORの実装・信頼値測定についてのメモ
     Node 4: malicious 5
     Node 5: malicious 4
     ```
+
+メモ(12/24)
+- 提案手法なし(attacker=3)
+
+```
+Node 0: malicious 3
+Node 0: malicious 2
+Node 1: malicious 3
+Node 1: malicious 2
+Node 1: malicious 5
+Node 2: malicious 3
+Node 2: malicious 5
+Node 3: malicious 2
+Node 3: malicious 5
+Node 4: malicious 5
+```
+
+- あり
+
+```
+Node 0: malicious 3
+Node 1: malicious 3
+Node 2: malicious 3
+Node 3: malicious 5
+```
+
+- 提案手法ありとなしで検知に違いを作ることができた
+    - PDRに違いが出るようにする

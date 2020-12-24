@@ -305,11 +305,17 @@ void cntint_flush_prevhop(ONode on[], Graph &gr, int node_num_to)
     //i->jかつi->node_num_to
     for (int i = 0; i < N; i++)
     {
-        for (int j = 0; j < N; j++)
+        //node_num_toへのインタラクションをリセット
+        if (IsLinked(gr, i, node_num_to))
         {
-            if (IsLinked(gr, i, node_num_to) && IsLinked(gr, j, node_num_to))
+            cntint_flush(on, i, node_num_to);
+            //node_num_toと同ホップのノードのインタラクションをリセット
+            for (int j = 0; j < N; j++)
             {
-                cntint_flush(on, i, node_num_to);
+                if (j != node_num_to && IsLinked(gr, i, j))
+                {
+                    cntint_flush(on, i, j);
+                }
             }
         }
     }
@@ -1038,6 +1044,13 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
         if (i != node_num_send && IsLinked(gr, i, node_num_send))
         {
             cnt_inter(on, i, node_num_send, 0);
+            for (int j = 0; j < N; j++)
+            {
+                if (IsLinked(gr, i, j))
+                {
+                    cnt_inter(on, j, node_num_send, 0);
+                }
+            }
         }
     }
     //パケットをある程度送信したら信頼値を測定する
@@ -1067,6 +1080,13 @@ void WhenSendPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
         if (i != node_num_send && IsLinked(gr, i, node_num_send))
         {
             cnt_inter(on, i, node_num_send, 1);
+            for (int j = 0; j < N; j++)
+            {
+                if (IsLinked(gr, i, j))
+                {
+                    cnt_inter(on, j, node_num_send, 1);
+                }
+            }
         }
     }
 }
@@ -1079,6 +1099,13 @@ void WhenSendPacketDup(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
         if (i != node_num_send && IsLinked(gr, i, node_num_send))
         {
             cnt_inter(on, i, node_num_send, 2);
+            for (int j = 0; j < N; j++)
+            {
+                if (IsLinked(gr, i, j))
+                {
+                    cnt_inter(on, j, node_num_send, 2);
+                }
+            }
         }
     }
 }
@@ -1604,7 +1631,7 @@ int main(void)
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
-    set_simulate_mode(3);
+    set_simulate_mode(2);
     simulate();
     return 0;
 }
