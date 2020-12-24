@@ -655,7 +655,7 @@ void AttackerSet()
     //攻撃ノードのノード番号を登録しておく
     for (int i = 0; i < number_of_malnodes; i++)
     {
-        attacker_array[i] = 3;
+        attacker_array[i] = 5 * i;
     }
 }
 
@@ -1519,7 +1519,7 @@ void get_detect_rate()
     int cnt_of_detected = 0;
     map<int, int> mp;
     //検出したノード番号と出現回数を記録する
-    for (int i = 0; i < N; i++)
+    for (int i = 0; i <= d; i++)
     {
         if (malnodes_array[i].size() > 0)
         {
@@ -1571,7 +1571,7 @@ void simulate_end()
 void edge_set_from_file(Graph &gr)
 {
     //ファイルから読み込む形に変更する
-    ifstream ifs("topology4.txt", ios::in);
+    ifstream ifs("topology.txt", ios::in);
     if (!ifs)
     {
         cerr << "Error: file not opened" << endl;
@@ -1631,7 +1631,7 @@ int main(void)
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
-    set_simulate_mode(2);
+    set_simulate_mode(3);
     simulate();
     return 0;
 }
