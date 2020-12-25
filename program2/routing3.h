@@ -18,10 +18,10 @@ using namespace std;
 typedef long long int lli;
 
 #define INF 1e30
-const int N = 7;                  // ノード数
+const int N = 50;                 // ノード数
 const int d = N - 1;              //宛先
 int send_round = 0;               //ラウンド
-const int number_of_malnodes = 1; //悪意のあるノード数
+const int number_of_malnodes = 5; //悪意のあるノード数
 int mode = 0;                     //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;                            //通信成功率(定数)

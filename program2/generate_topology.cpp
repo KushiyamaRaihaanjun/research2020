@@ -111,42 +111,57 @@ int main(int argc, char *argv[])
     方針3
     ホップ数を5~10で用意して，ホップ数の配置を考える
     */
-    int mx_hop = rnd(6, 11);                  //最大Hop数(5~10)
-    vector<vector<int>> nodes_array;          //ホップ数，そのホップ数におけるノード番号
-    nodes_array.resize(mx_hop);               //サイズをホップ数にする
+    int mx_hop = rnd(7, 10);                 //最大Hop数(6~9)
+    vector<vector<int>> nodes_array(mx_hop); //ホップ数，そのホップ数におけるノード番号
+    //nodes_array.resize(mx_hop);               //サイズをホップ数にする
     nodes_array[0].push_back(0);              //0ホップは0
     nodes_array[mx_hop - 1].push_back(N - 1); //最終ホップはN-1
-    int rest_node_num = N - 2;                //残りホップ数
     map<int, int> node_map;
-    int tmp_rest = rest_node_num;
-    while (rest_node_num > 0)
+    int nodes_array_total_size = 0;
+    while (1)
     {
         for (int i = 1; i < mx_hop - 1; i++)
         {
-            int hop_node_number = rnd(5, 7); //n hopのノード数
-            for (int j = 0; j < hop_node_number; j++)
+            int hop_node_number = rnd(6, 12);       //n hopのノード数
+            nodes_array[i].resize(hop_node_number); //ノード数にリサイズする
+            nodes_array_total_size += hop_node_number;
+        }
+        if (nodes_array_total_size != N - 2)
+        {
+            nodes_array_total_size = 0;
+            continue;
+        }
+        for (int i = 1; i < mx_hop - 1; i++)
+        {
+            int j = 0;
+            while (j < nodes_array[i].size())
             {
-                int node_num = rnd(1, N - 2); //ノード番号を生成
-                if (node_map[node_num] == 0)
+                int node_num = rnd(1, dst - 1); //ノード番号を生成
+                if (node_map.find(node_num) == node_map.end())
                 {
-                    nodes_array[i].push_back(node_num);
+                    nodes_array[i][j] = node_num;
                     node_map[node_num]++;
-                }
-                else
-                {
-                    j--;
+                    j++;
                 }
             }
-            rest_node_num -= hop_node_number; //ノード数だけ減らす
+            //rest_node_num -= hop_node_number; //ノード数だけ減らす
+            if (node_map.size() == N - 2)
+            {
+                break;
+            }
         }
         //終了条件はジャスト
-        if (rest_node_num != 0)
+        if (node_map.size() == N - 2)
         {
-            rest_node_num = tmp_rest;
+            break;
         }
         else
         {
-            break;
+            node_map.clear();
+            for (int i = 1; i < mx_hop - 1; i++)
+            {
+                nodes_array[i].clear();
+            }
         }
     }
     map<pair<int, int>, int> nodeval; //fromとtoのペアを保持
@@ -157,31 +172,32 @@ int main(int argc, char *argv[])
     while (1)
     {
         ofstream out("topology1.txt");
-        for (int i = 1; i < mx_hop; i++)
+        for (int i = 1; i < mx_hop; i++) //mx_hop-1..dstのみ
         {
             //loop開始(エッジ数)
             if (i <= mx_hop - 2)
             {
                 for (int j = 0; j < 2 * nodes_array[i].size(); j++)
                 {
-                    int from = nodes_array[i - 1][rnd(nodes_array[i].size())]; //from
-                    int to = nodes_array[i][rnd(nodes_array[i].size())];       //to
-                    double rate = rnd.randDoubleRange(0.5, 0.8);               //通信成功率
-                    if (nodeval[{from, to}] == 0)                              //まだ接続していないノードのみ接続する
+                    int from = nodes_array[i - 1][rnd(nodes_array[i - 1].size())]; //from
+                    int to = nodes_array[i][rnd(nodes_array[i].size())];           //to
+                    double rate = rnd.randDoubleRange(0.5, 0.8);                   //通信成功率
+                    if (nodeval[{from, to}] == 0 && from != to)                    //まだ接続していないノードのみ接続する
                     {
-                        out << from << " " << to << " " << rate << endl;
                         g[from].push_back(Edge(to, rate));
+                        out << from << " " << to << " " << rate << endl;
                         nodeval[{from, to}]++;
                     }
                 }
             }
-            else
+            else //i==mxhop-1のときのみの処理
             {
                 for (int j = 0; j < nodes_array[i - 1].size(); j++)
                 {
                     int from = nodes_array[i - 1][j];
                     int to = dst;
                     double rate = rnd.randDoubleRange(0.5, 0.8);
+                    g[from].push_back(Edge(to, rate));
                     out << from << " " << to << " " << rate << endl;
                 }
             }
@@ -189,8 +205,8 @@ int main(int argc, char *argv[])
         }
         //dfsで接続性チェック
         dfs(g, 0);
-        g.clear();
         nodeval.clear();
+        g.clear();
         if (seen[dst] == true)
         {
             out.close();

@@ -655,7 +655,7 @@ void AttackerSet()
     //攻撃ノードのノード番号を登録しておく
     for (int i = 0; i < number_of_malnodes; i++)
     {
-        attacker_array[i] = 5;
+        attacker_array[i] = 5 * i;
     }
 }
 
@@ -1366,8 +1366,8 @@ void simulate_with_Tv_with_at()
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    edge_set(g);
-    //edge_set_from_file(g);
+    //edge_set(g);
+    edge_set_from_file(g);
     Node node[N];
     ONode obs_node[N];
     //攻撃ノードの情報を追加
@@ -1404,8 +1404,8 @@ void simulate_with_Suggest_with_attack()
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    edge_set(g);
-    //edge_set_from_file(g);
+    //edge_set(g);
+    edge_set_from_file(g);
     Node node[N];
     ONode obs_node[N];
     //攻撃ノードの情報を追加
@@ -1530,6 +1530,7 @@ void get_detect_rate()
             //cnt_of_detected += malnodes_array[i].size();
         }
     }
+    map<int, int> missed; //誤って検知したノード数
     for (auto i : mp)
     {
         for (int j = 0; j < attacker_array.size(); j++)
@@ -1538,10 +1539,15 @@ void get_detect_rate()
             {
                 cnt_of_detected++;
             }
+            else
+            {
+                missed[i.first]++;
+            }
         }
     }
     double detection_rate = (double)((double)cnt_of_detected / (double)number_of_malnodes);
     cout << "Detection Rate: " << detection_rate << endl;
+    cout << "Count Missed : " << missed.size() << endl;
     for (int i = 0; i < N; i++)
     {
         if (malnodes_array[i].size() > 0)
@@ -1571,7 +1577,7 @@ void simulate_end()
 void edge_set_from_file(Graph &gr)
 {
     //ファイルから読み込む形に変更する
-    ifstream ifs("topology.txt", ios::in);
+    ifstream ifs("topology1.txt", ios::in);
     if (!ifs)
     {
         cerr << "Error: file not opened" << endl;
