@@ -655,7 +655,7 @@ void AttackerSet()
     //攻撃ノードのノード番号を登録しておく
     for (int i = 0; i < number_of_malnodes; i++)
     {
-        attacker_array[i] = 5 * i;
+        attacker_array[i] = 5 * (i + 1);
     }
 }
 
@@ -1521,7 +1521,7 @@ void get_detect_rate()
     //検出したノード番号と出現回数を記録する
     for (int i = 0; i <= d; i++)
     {
-        if (malnodes_array[i].size() > 0)
+        if (malnodes_array[i].size() > 0 && !IsRegisteredAt(i))
         {
             for (int j = 0; j < malnodes_array[i].size(); i++)
             {
@@ -1530,7 +1530,7 @@ void get_detect_rate()
             //cnt_of_detected += malnodes_array[i].size();
         }
     }
-    map<int, int> missed; //誤って検知したノード数
+    map<int, int> missed; //誤検知したノード数
     for (auto i : mp)
     {
         for (int j = 0; j < attacker_array.size(); j++)
@@ -1547,7 +1547,7 @@ void get_detect_rate()
     }
     double detection_rate = (double)((double)cnt_of_detected / (double)number_of_malnodes);
     cout << "Detection Rate: " << detection_rate << endl;
-    cout << "Count Missed : " << missed.size() << endl;
+    cout << "Count Missed : " << missed.size() << endl; //誤検知
     for (int i = 0; i < N; i++)
     {
         if (malnodes_array[i].size() > 0)
