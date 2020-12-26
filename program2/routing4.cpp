@@ -450,8 +450,8 @@ void CalTrust_and_Filtering_nb(ONode on[], Graph &gr, int node_num_from)
             if (tv + eps <= threshold) //信頼値が閾値以下の場合
             {
                 //constを変更しようとしている
-                //RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
-                RegistTable(j, node_num_from); //まだ登録されていない場合テーブルに登録する
+                RemoveEdgeToMal(gr, j, node_num_from); //悪意のあるノードのエッジを取り除く
+                RegistTable(j, node_num_from);         //まだ登録されていない場合テーブルに登録する
             }
         }
     }
@@ -497,8 +497,8 @@ void CalTrustWhileSending(ONode on[], Graph &gr, int node_num_to)
             if (tv + eps <= threshold) //信頼値が閾値以下の場合
             {
                 //constを変更しようとしている
-                //RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
-                RegistTable(node_num_to, i); //まだ登録されていない場合テーブルに登録する
+                RemoveEdgeToMal(gr, node_num_to, i); //悪意のあるノードのエッジを取り除く
+                RegistTable(node_num_to, i);         //まだ登録されていない場合テーブルに登録する
             }
         }
     }
@@ -586,18 +586,21 @@ void RegistTable(int mal_num, int detect_num)
 }
 
 //悪意ノードのリンクを除去
-//void RemoveEdgeToMal(Graph &gr, int mal_edge, int detect_num)
-//{
-//    //mal_edgeの要素を削除
-//    //普通1本だからforじゃなくて良いかも
-//    for (auto edge : gr[detect_num])
-//    {
-//        if (edge.to == mal_edge)
-//        {
-//            gr[detect_num].erase(remove(gr[detect_num].begin(), gr[detect_num].end(), edge), gr[detect_num].end());
-//        }
-//    }
-//}
+void RemoveEdgeToMal(Graph &gr, int mal_edge, int detect_num)
+{
+    //mal_edgeの要素を削除
+    //普通1本だからforじゃなくて良いかも
+    double mal_rate = 0.0;
+    for (auto edge : gr[detect_num])
+    {
+        if (edge.to == mal_edge)
+        {
+            mal_rate = edge.tsuccess_rate;
+        }
+    }
+    const Edge link_to_mal(mal_edge, mal_rate);
+    gr[detect_num].erase(remove(gr[detect_num].begin(), gr[detect_num].end(), link_to_mal), gr[detect_num].end());
+}
 
 //登録した攻撃ノードを検索
 bool FindFromMaltable(int node_num, int key)
@@ -1306,9 +1309,11 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
     } //end for
 }
 
-//ルーチングを行う
+//ルーチングを行う関数
 void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
 {
+    edge_set(g); //エッジをセット
+    //edge_set_from_file(g);
     //攻撃ノードの情報を追加
     //パケットはuID指定
     set_map(node);
@@ -1316,11 +1321,18 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     bfs(g);                      //幅優先探索によりホップ数計算
     int packet_step_send = 1000; //パケットのstep数(packet_stepと同名にしない)
     int packet_total_num = 0;    //パケットのカウンター
-    //パケットの合計数が総パケット数より小さい間 do
-    while (packet_total_num < numberofpackets)
+    if (mode >= 2)               //測定あり
     {
+        array_ONodeinit(obs_node); //ONodeのdtv配列をリサイズする
+    }
+    while (packet_total_num < numberofpackets) //パケットの合計数が総パケット数より小さい間 do
+    {
+        if (mode >= 2) //測定あり
+        {
+            cntint_flush_all(obs_node); //インタラクション数をリセット
+        }
         Decidepriorityfromsource(g, node, 0, d);
-        //packet_step個送信
+        //packet_step_send個送信
         for (int i = packet_total_num; i < packet_total_num + packet_step_send; i++)
         {
             BroadcastFromSource(g, node, obs_node, 0, i, d);
@@ -1340,6 +1352,10 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     }
     show_map(node);
     show_pdr(node);
+    if (mode >= 2)
+    {
+        get_detect_rate();
+    }
 }
 
 ////////////////////////シミュレーション・結果処理関連//////////////////////////////
@@ -1349,74 +1365,22 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
 //単純な性能評価用...0
 void simulate_without_Tv_without_at()
 {
-    //ノードの位置を入力(あとで？)
-    //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    //edge_set(g);
-    edge_set_from_file(g);
     Node node[N];
     ONode obs_node[N];
-    //攻撃ノードの情報を追加
-    //パケットはuID指定
-    set_map(node);
-    seen.assign(N, false);
-    Decidepriorityfromsource(g, node, 0, d);
-    bfs(g); //幅優先探索によりホップ数計算
-    for (int i = 0; i < numberofpackets; i++)
-    {
-        BroadcastFromSource(g, node, obs_node, 0, i, d);
-    }
-    //中継ノードの優先度を決定
-    //各priorityqueueに優先度を入れている？
-    //優先度決定を幅優先探索で求めたHop数ごとに行う
-    //最大ホップ数を取得
-    int mxhop = GetMaxHop();
-    for (int i = 1; i < mxhop; i++)
-    {
-        DecidePriorityIntermediate(g, node, i, d);
-    }
-    BroadcastFromIntermediatenode(g, node, obs_node);
-    show_map(node);
-    show_pdr(node);
+    OpportunisticRouting4(g, node, obs_node);
 }
 
 //測定なしかつ攻撃あり...1
 void simulate_without_Tv_with_at()
 {
-    //ノードの位置を入力(あとで？)
-    //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    //edge_set(g);
-    edge_set_from_file(g);
     Node node[N];
     ONode obs_node[N];
-    //攻撃ノードの情報を追加
-    //パケットはuID指定
-    set_map(node);
-    AttackerSet();             //攻撃ノード指定
-    array_ONodeinit(obs_node); //ONodeのdtv配列をリサイズする
-    //cntint_flush_all(obs_node); //インタラクション数をリセット
-    seen.assign(N, false);
-    Decidepriorityfromsource(g, node, 0, d);
-    bfs(g); //幅優先探索によりホップ数計算
-    for (int i = 0; i < numberofpackets; i++)
-    {
-        BroadcastFromSource(g, node, obs_node, 0, i, d);
-    }
-    //中継ノードの優先度を決定
-    //各priorityqueueに優先度を入れている？
-    //優先度決定を幅優先探索で求めたHop数ごとに行う
-    //最大ホップ数を取得
-    int mxhop = GetMaxHop();
-    for (int i = 1; i < mxhop; i++)
-    {
-        DecidePriorityIntermediate(g, node, i, d);
-    }
-    BroadcastFromIntermediatenode(g, node, obs_node);
-    show_map(node);
-    show_pdr(node);
+    AttackerSet();
+    OpportunisticRouting4(g, node, obs_node);
 }
 //測定ありかつ攻撃あり...2
 void simulate_with_Tv_with_at()
@@ -1425,36 +1389,12 @@ void simulate_with_Tv_with_at()
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    //edge_set(g);
-    edge_set_from_file(g);
     Node node[N];
     ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
-    set_map(node);
-    AttackerSet();              //攻撃ノード指定
-    array_ONodeinit(obs_node);  //ONodeのdtv配列をリサイズする
-    cntint_flush_all(obs_node); //インタラクション数をリセット
-    seen.assign(N, false);
-    Decidepriorityfromsource(g, node, 0, d);
-    bfs(g); //幅優先探索によりホップ数計算
-    for (int i = 0; i < numberofpackets; i++)
-    {
-        BroadcastFromSource(g, node, obs_node, 0, i, d);
-    }
-    //中継ノードの優先度を決定
-    //各priorityqueueに優先度を入れている？
-    //優先度決定を幅優先探索で求めたHop数ごとに行う
-    //最大ホップ数を取得
-    int mxhop = GetMaxHop();
-    for (int i = 1; i < mxhop; i++)
-    {
-        DecidePriorityIntermediate(g, node, i, d);
-    }
-    BroadcastFromIntermediatenode(g, node, obs_node);
-    show_map(node);
-    show_pdr(node);
-    get_detect_rate();
+    AttackerSet(); //攻撃ノード指定
+    OpportunisticRouting4(g, node, obs_node);
 }
 //提案手法ありかつ攻撃あり...3
 void simulate_with_Suggest_with_attack()
@@ -1463,36 +1403,12 @@ void simulate_with_Suggest_with_attack()
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    //edge_set(g);
-    edge_set_from_file(g);
     Node node[N];
     ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
-    set_map(node);
-    AttackerSet();              //攻撃ノード指定
-    array_ONodeinit(obs_node);  //ONodeのdtv配列をリサイズする
-    cntint_flush_all(obs_node); //インタラクション数をリセット
-    seen.assign(N, false);
-    Decidepriorityfromsource(g, node, 0, d);
-    bfs(g); //幅優先探索によりホップ数計算
-    for (int i = 0; i < numberofpackets; i++)
-    {
-        BroadcastFromSource(g, node, obs_node, 0, i, d);
-    }
-    //中継ノードの優先度を決定
-    //各priorityqueueに優先度を入れている？
-    //優先度決定を幅優先探索で求めたHop数ごとに行う
-    //最大ホップ数を取得
-    int mxhop = GetMaxHop();
-    for (int i = 1; i < mxhop; i++)
-    {
-        DecidePriorityIntermediate(g, node, i, d);
-    }
-    BroadcastFromIntermediatenode(g, node, obs_node);
-    show_map(node);
-    show_pdr(node);
-    get_detect_rate();
+    AttackerSet(); //攻撃ノード指定
+    OpportunisticRouting4(g, node, obs_node);
 }
 
 //シミュレーションモードを変更する
@@ -1671,10 +1587,10 @@ void edge_set(Graph &gr)
     gr[1].push_back(Edge(4, 0.8));
     gr[1].push_back(Edge(5, 0.8));
     //gr[2].push_back(Edge(3, 0.8));
-    gr[2].push_back(Edge(4, 0.8));
-    gr[2].push_back(Edge(5, 0.8));
-    gr[3].push_back(Edge(4, 0.8));
-    gr[3].push_back(Edge(5, 0.8));
+    gr[2].push_back(Edge(4, 0.6));
+    gr[2].push_back(Edge(5, 0.6));
+    gr[3].push_back(Edge(4, 0.6));
+    gr[3].push_back(Edge(5, 0.6));
     gr[4].push_back(Edge(6, 0.8));
     gr[5].push_back(Edge(6, 0.8));
     checked.resize(gr[0].size());

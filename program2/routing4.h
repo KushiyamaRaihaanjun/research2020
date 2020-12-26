@@ -19,10 +19,10 @@ using namespace std;
 typedef long long int lli;
 
 #define INF 1e30
-const int N = 50;                 // ノード数
+const int N = 7;                  // ノード数
 const int d = N - 1;              //宛先
 int send_round = 0;               //ラウンド
-const int number_of_malnodes = 5; //悪意のあるノード数
+const int number_of_malnodes = 1; //悪意のあるノード数
 int mode = 0;                     //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;                            //通信成功率(定数)
@@ -42,7 +42,18 @@ struct Edge
 {
     int to;
     double tsuccess_rate;
-    Edge(int t, double rate) : to(t), tsuccess_rate(rate){};
+    //Edge(int t, double rate) : to(t), tsuccess_rate(rate){};
+    Edge(int t, double tsuccess_rate)
+    {
+        this->to = t;
+        this->tsuccess_rate = tsuccess_rate;
+    }
+    //演算子
+    bool operator==(const Edge &e) const
+    {
+        return e.to == to;
+    }
+    Edge() {}
 };
 using Graph = vector<vector<Edge>>;                            //グラフ型
 using P = pair<double, int>;                                   //ETX,ノード番号のペア
