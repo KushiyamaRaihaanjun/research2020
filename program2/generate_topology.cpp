@@ -218,62 +218,6 @@ int main(int argc, char *argv[])
             seen.assign(N, false);
         }
     }
-
-    /*while (1)
-    {
-        int one_hop_count = 0; //送信元から1hopのノードの数
-        ofstream out("topology.txt");
-        for (int i = 0; i < M; i++)
-        {
-            int from = rnd(N);
-            int to = rnd(N);
-            double rate = rnd.randDoubleRange(0.5, 0.8);
-            if (from < to && nodeval[{from, to}] == 0 && !(from == 0 && to == dst))
-            {
-                if (from == 0 && one_hop_count < 10)
-                {
-                    g2[from].push_back(Edge(to, rate));
-                    out << from << " " << to << " " << rate << endl;
-                    nodeval[{from, to}]++;
-                    one_hop_count++;
-                }
-                else if (from > 0 && nodeval[{0, from}] == 0) //fromが送信元と接続がない場合
-                {
-                    g2[from].push_back(Edge(to, rate));
-                    out << from << " " << to << " " << rate << endl;
-                    nodeval[{from, to}]++;
-                }
-                else
-                {
-                    if (i >= 1)
-                    {
-                        i--;
-                    }
-                }
-            }
-            else
-            {
-                if (i >= 1)
-                {
-                    i--;
-                }
-            }
-        }
-        dfs(g2, 0); //到達性チェック
-        nodeval.clear();
-        g2.clear();
-        if (seen[dst] == true)
-        {
-            out.close();
-            break; //終了
-        }
-        else
-        {
-            out.close();
-            seen.assign(N, false); //seenをリセット
-        }
-    }
-    */
     //ファイル書き込み
 
     return 0;
