@@ -1,6 +1,7 @@
 //長過ぎるのでプロトタイプ宣言などを分割(12/18)
-#ifndef routing3header
-#define routing3header
+//送信方法を変更(12/26)
+#ifndef routing4header
+#define routing4header
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
@@ -186,6 +187,7 @@ void AttackerSet();
 bool IsRegisteredAt(int key);
 void dfs(const Graph &gr, int ver);
 void bfs(const Graph &gr);
+void CleanPriorityQueue();
 int GetMaxHop();
 bool IsLinked(Graph &gr, int from, int to);
 bool IsOneHopNeighbor(Graph &gr, int node_num1, int node_num2);

@@ -1,8 +1,9 @@
-//From 2020-12-18
-//ソースコードを分割(routing3.hを作った)
-//信頼値測定を加えたバージョン3
-//routing2にも書きかけあり
-#include "routing3.h"
+/*From 2020-12-26
+ソースコードを分割(routing4.hを作った)
+信頼値測定を加えた,送信方法を変更したバージョン4
+routing2にも書きかけあり
+*/
+#include "routing4.h"
 //三進法変換
 int threearray[18];
 void num_to_three(int x)
@@ -721,6 +722,28 @@ void bfs(const Graph &gr)
     }
 }
 
+//優先度付きキューをリセットする
+void CleanPriorityQueue()
+{
+    if (!pq_onehop_fromsource.empty())
+    {
+        while (!pq_onehop_fromsource.empty())
+        {
+            pq_onehop_fromsource.pop();
+        }
+    }
+    for (int i = 0; i < N; i++)
+    {
+        if (!pq_intermediate[i].empty())
+        {
+            while (!pq_intermediate[i].empty())
+            {
+                pq_intermediate[i].pop();
+            }
+        }
+    }
+}
+
 //ホップ数を調べる
 int GetMaxHop()
 {
@@ -1281,6 +1304,42 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             pq_intermediate[i].pop();
         }
     } //end for
+}
+
+//ルーチングを行う
+void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
+{
+    //攻撃ノードの情報を追加
+    //パケットはuID指定
+    set_map(node);
+    seen.assign(N, false);       //seen(訪問配列)をリセット
+    bfs(g);                      //幅優先探索によりホップ数計算
+    int packet_step_send = 1000; //パケットのstep数(packet_stepと同名にしない)
+    int packet_total_num = 0;    //パケットのカウンター
+    //パケットの合計数が総パケット数より小さい間 do
+    while (packet_total_num < numberofpackets)
+    {
+        Decidepriorityfromsource(g, node, 0, d);
+        //packet_step個送信
+        for (int i = packet_total_num; i < packet_total_num + packet_step_send; i++)
+        {
+            BroadcastFromSource(g, node, obs_node, 0, i, d);
+        }
+        //中継ノードの優先度を決定
+        //各priorityqueueに優先度を入れている？
+        //優先度決定を幅優先探索で求めたHop数ごとに行う
+        //最大ホップ数を取得
+        int mxhop = GetMaxHop();
+        for (int i = 1; i < mxhop; i++)
+        {
+            DecidePriorityIntermediate(g, node, i, d);
+        }
+        BroadcastFromIntermediatenode(g, node, obs_node);
+        packet_total_num += packet_step_send;
+        CleanPriorityQueue(); //優先度キューのリセット
+    }
+    show_map(node);
+    show_pdr(node);
 }
 
 ////////////////////////シミュレーション・結果処理関連//////////////////////////////
