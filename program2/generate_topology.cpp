@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
             //loop開始(エッジ数)
             if (i <= mx_hop - 2)
             {
-                for (int j = 0; j < 2 * nodes_array[i].size(); j++)
+                for (int j = 0; j < 4 * nodes_array[i].size(); j++)
                 {
                     int from = nodes_array[i - 1][rnd(nodes_array[i - 1].size())]; //from
                     int to = nodes_array[i][rnd(nodes_array[i].size())];           //to

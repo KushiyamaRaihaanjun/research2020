@@ -19,10 +19,10 @@ using namespace std;
 typedef long long int lli;
 
 #define INF 1e30
-const int N = 7;                  // ノード数
+const int N = 50;                 // ノード数
 const int d = N - 1;              //宛先
 int send_round = 0;               //ラウンド
-const int number_of_malnodes = 1; //悪意のあるノード数
+const int number_of_malnodes = 7; //悪意のあるノード数
 int mode = 0;                     //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;                            //通信成功率(定数)
@@ -225,7 +225,7 @@ void set_map(Node node[]);
 void show_map(Node node[]);
 void get_detect_rate();
 void show_pdr(Node node[]);
-void simulate_end();
+void simulate_end(Graph &g);
 void edge_set_from_file(Graph &gr);
 void edge_set(Graph &gr);
 vector<vector<int>> GetAllRoute();

@@ -386,4 +386,15 @@ Node 3: malicious 5
     - エッジを取り除くのができた
     - PDRに4~6パーセントの差(N=7,malnode=1)の場合
     - バグが出る可能性があるので注意する(norouteを消す)
+- メモ(12/27)
+    - 一応PDRについてそれらしい結果が出た
+    - 信頼値測定のタイミングによって誤検出を頻発している？
+
+- 使ったコマンド
+    - node xの宛先までのETXのみを取り出す
+
+    ```
+    kushiyama@MyComputer:/mnt/c/Users/raiha/Documents/GitHub/research2020/  program2$ ./routing4 | grep -E 'Node x :ETX'
+    ```
+
         

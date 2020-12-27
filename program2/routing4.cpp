@@ -590,6 +590,10 @@ void RemoveEdgeToMal(Graph &gr, int mal_edge, int detect_num)
 {
     //mal_edgeの要素を削除
     //普通1本だからforじゃなくて良いかも
+    if (mal_edge == d)
+    {
+        return;
+    }
     double mal_rate = 0.0;
     for (auto edge : gr[detect_num])
     {
@@ -1312,8 +1316,8 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
 //ルーチングを行う関数
 void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
 {
-    edge_set(g); //エッジをセット
-    //edge_set_from_file(g);
+    //edge_set(g); //エッジをセット
+    edge_set_from_file(g);
     //攻撃ノードの情報を追加
     //パケットはuID指定
     set_map(node);
@@ -1355,6 +1359,7 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     if (mode >= 2)
     {
         get_detect_rate();
+        simulate_end(g);
     }
 }
 
@@ -1500,7 +1505,11 @@ void get_detect_rate()
         {
             for (int j = 0; j < malnodes_array[i].size(); i++)
             {
-                mp[malnodes_array[i][j]]++;
+                //攻撃ノードでない場合malnodes_arrayをカウント
+                if (!IsRegisteredAt(i))
+                {
+                    mp[malnodes_array[i][j]]++;
+                }
             }
             //cnt_of_detected += malnodes_array[i].size();
         }
@@ -1543,9 +1552,25 @@ void show_pdr(Node node[])
     cout << "PDR: " << recv << endl;
 }
 
-void simulate_end()
+void simulate_end(Graph &g)
 {
     //結果はcsv等に保存？
+    string s = "fin_topology.txt";
+    ofstream ofs(s);
+    for (int i = 0; i < N; i++)
+    {
+        if (g[i].size() > 0)
+        {
+            for (int j = 0; j < g[i].size(); j++)
+            {
+                int from = i;
+                int to = g[i][j].to;
+                double rate = g[i][j].tsuccess_rate;
+                ofs << from << " " << to << " " << rate << endl;
+            }
+        }
+    }
+    ofs.close();
     //string result = "xxx.csv";
 }
 
