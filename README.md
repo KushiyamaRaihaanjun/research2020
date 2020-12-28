@@ -73,6 +73,9 @@ ORの実装・信頼値測定についてのメモ
     - [お手軽 乱数実装【C++11】](https://qiita.com/Gaccho/items/dc312fb5a056505f0a9f)
     - [BFS (幅優先探索) 超入門！ 〜 キューを鮮やかに使いこなす 〜](https://qiita.com/drken/items/996d80bcae64649a6580)
     - [C, C++でのファイル入力をまとめてみたよ](https://qiita.com/Reed_X1319RAY/items/098596cda78e9c1a6bad)
+- matplotlib
+    - [ ファイルから読み込まれた2次元データのプロット，可視化，matplotlib](https://qiita.com/sci_Haru/items/4c4fb511521c4f4e816d)
+    - [2016-04-21matplotlibで軸の値が小数になったりオフセット表現になったりするのを止める方法](https://minus9d.hatenablog.com/entry/2016/04/21/215532)
 - その他
     - [uniform_real_distribution](https://cpprefjp.github.io/reference/random/uniform_real_distribution.html)
     - [cpprefjp - C++日本語リファレンス](https://cpprefjp.github.io/)
@@ -81,6 +84,7 @@ ORの実装・信頼値測定についてのメモ
         - 隣接リストなどについて
     - [グラフ描画用のツール](https://kyopro.hateblo.jp/entry/2018/04/26/204335)
     - [【二値分類の評価指標】再現率は見逃さない確率、適合率は誤検出しない確率](https://qiita.com/lilacs/items/703314640ac790e4a6c5)
+    - [【Linux】エイリアスの設定方法](https://qiita.com/_ydah/items/18d242b632e5486fe912)
 ## その他事項・疑問・メモ
 - gitの設定をした(Ubuntu18.04LTSで):kushiyama@mycomputerから
 - 攻撃ノードは通信成功率を0とするとETXが無限になってゼロ除算が発生する
