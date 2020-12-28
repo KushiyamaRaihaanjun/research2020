@@ -19,18 +19,18 @@ using namespace std;
 typedef long long int lli;
 
 #define INF 1e30
-const int N = 50;                 // ノード数
-const int d = N - 1;              //宛先
-int send_round = 0;               //ラウンド
-const int number_of_malnodes = 7; //悪意のあるノード数
-int mode = 0;                     //実験モード
+const int N = 50;                  // ノード数
+const int d = N - 1;               //宛先
+int send_round = 0;                //ラウンド
+const int number_of_malnodes = 10; //悪意のあるノード数
+int mode = 0;                      //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;                            //通信成功率(定数)
 double threshold = 0.5000;                                 // 信頼値の閾値
 double theta = 0.5;                                        //直接的な信頼値の重み
 double gm = 1.01;                                          //dtvを求める際の悪意のある動作betaの重み
-const int packet_step = 500;                               //ラウンドで送信するパケット数
-const int numberofpackets = 10000;                         //送信するパケット数
+const int packet_step = 5000;                              //ラウンドで送信するパケット数
+const int numberofpackets = 50000;                         //送信するパケット数
 const int mx_round = (int)(numberofpackets / packet_step); //ラウンドの最大
 double tmpetx = 0.0;                                       //etx計算用
 vector<bool> seen;                                         // 到達可能かどうかを調べる

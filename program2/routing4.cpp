@@ -663,7 +663,7 @@ void AttackerSet()
     //攻撃ノードのノード番号を登録しておく
     for (int i = 0; i < number_of_malnodes; i++)
     {
-        attacker_array[i] = 5 * (i + 1);
+        attacker_array[i] = 3 * (i + 1);
     }
 }
 
@@ -1321,11 +1321,11 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     //攻撃ノードの情報を追加
     //パケットはuID指定
     set_map(node);
-    seen.assign(N, false);       //seen(訪問配列)をリセット
-    bfs(g);                      //幅優先探索によりホップ数計算
-    int packet_step_send = 1000; //パケットのstep数(packet_stepと同名にしない)
-    int packet_total_num = 0;    //パケットのカウンター
-    if (mode >= 2)               //測定あり
+    seen.assign(N, false);        //seen(訪問配列)をリセット
+    bfs(g);                       //幅優先探索によりホップ数計算
+    int packet_step_send = 10000; //パケットのstep数(packet_stepと同名にしない)
+    int packet_total_num = 0;     //パケットのカウンター
+    if (mode >= 2)                //測定あり
     {
         array_ONodeinit(obs_node); //ONodeのdtv配列をリサイズする
     }
@@ -1529,7 +1529,7 @@ void get_detect_rate()
             }
         }
     }
-    double detection_rate = (double)((double)cnt_of_detected / (double)number_of_malnodes);
+    double detection_rate = (double)((double)(cnt_of_detected) + eps) / (double)number_of_malnodes;
     cout << "Detection Rate: " << detection_rate << endl;
     cout << "Count Missed : " << missed.size() << endl; //誤検知
     for (int i = 0; i < N; i++)

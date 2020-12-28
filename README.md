@@ -394,7 +394,43 @@ Node 3: malicious 5
     - node xの宛先までのETXのみを取り出す
 
     ```
-    kushiyama@MyComputer:/mnt/c/Users/raiha/Documents/GitHub/research2020/  program2$ ./routing4 | grep -E 'Node x :ETX'
+    $ ./routing4 | grep -E 'Node x :ETX'
     ```
 
-        
+- メモ(12/28)
+    - 4*前ホップノードのノード数
+    - 2の時？ 9
+    - 3の時 11
+    - 2の時 14
+
+    ```
+    2
+    PDR: 0.48556
+    Detection Rate: 0.8
+    Count Missed : 13
+
+    3
+    PDR: 0.68232
+    Detection Rate: 0.8
+    Count Missed : 10
+    ```
+
+    - データをひとまずとってみる 
+        - 0,1,2,3で分ける
+        - 0はとりあえず省略
+        - 問題:悪意ノード数を変化させるのが手動でないとできない
+            - グローバル変数を止める？
+            - argvで受け取る形にすればシェル等で利用できる
+            - 止めたらできなそう
+            - 初め5にしておく
+        - 完全にランダムにする？
+        - PDR:0のデータが出るケースが考えられる
+    - 結果の命名規則
+    - PDR
+        - PDR-(実験モード)-(悪意のあるノード数).txt(それぞれ100行)
+        - PDR-(実験モード)-all.txt(5-25or30の6行)にcppを使って平均を書き込み，（上のファイルから）求める
+    - 検出率
+        - DETECT-(実験モード)-(悪意のあるノード数).txt(それぞれ100行)
+        - DETECT-(実験モード)-all.txt(5-25or30の6行)にcppを使って(上のファイルから)平均を求める
+    
+    - グラフ作成...pythonを使って書く？
