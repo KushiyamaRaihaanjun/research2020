@@ -228,6 +228,8 @@ void show_map(Node node[]);
 void get_detect_rate();
 void show_pdr(Node node[]);
 void simulate_end(Graph &g, Node node[]);
+void WritePDR(Node node[]);
+void WriteDetect();
 void edge_set_from_file(Graph &gr);
 void edge_set(Graph &gr);
 vector<vector<int>> GetAllRoute();

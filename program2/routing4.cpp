@@ -1584,29 +1584,70 @@ void simulate_end(Graph &g, Node node[])
         }
     }
     ofs.close();
-    ////ファイル名(PDR)
-    //string t1 = "PDR-";
-    //t1 += to_string(mode);
-    //t1 += "-";
-    //t1 += to_string(number_of_malnodes);
-    //t1 += ".txt";
-    ////終わり
-    ////PDRをファイルに書き込む
-    //ofstream ofs2(t1, ios::app);
-    //double recv = count(node[d].recvmap, node[d].recvmap + numberofpackets, true);
-    //recv /= (double)(numberofpackets);
-    //ofs2 << number_of_malnodes << " " << recv << endl; //悪意ノード数，PDR
-    //ofs2.close();
-    //
-    ////検出率
-    //string t2 = "DETECT-";
-    //t2 += to_string(mode);
-    //t2 += "-";
-    //t2 += to_string(number_of_malnodes);
-    //t2 += ".txt";
-    //ofstream ofs3(t2, ios::app);
-    //ofs3.close();
+    WritePDR(node);
     //string result = "xxx.csv";
+}
+void WritePDR(Node node[])
+{
+    //ファイル名(PDR)
+    string t1 = "PDR-";
+    t1 += to_string(mode);
+    t1 += "-";
+    t1 += to_string(number_of_malnodes);
+    t1 += ".txt";
+    //終わり
+    //PDRをファイルに書き込む
+    ofstream ofs2(t1, ios::app);
+    double recv = count(node[d].recvmap, node[d].recvmap + numberofpackets, true);
+    recv /= (double)(numberofpackets);
+    ofs2 << number_of_malnodes << " " << recv << endl; //悪意ノード数，PDR
+    ofs2.close();
+}
+void WriteDetect()
+{
+    int cnt_of_detected = 0;
+    map<int, int> mp;
+    //検出したノード番号と出現回数を記録する
+    for (int i = 0; i <= d; i++)
+    {
+        if (malnodes_array[i].size() > 0 && !IsRegisteredAt(i))
+        {
+            for (int j = 0; j < malnodes_array[i].size(); i++)
+            {
+                //攻撃ノードでない場合malnodes_arrayをカウント
+                if (!IsRegisteredAt(i))
+                {
+                    mp[malnodes_array[i][j]]++;
+                }
+            }
+            //cnt_of_detected += malnodes_array[i].size();
+        }
+    }
+    map<int, int> missed; //誤検知したノード数
+    for (auto i : mp)
+    {
+        for (int j = 0; j < attacker_array.size(); j++)
+        {
+            if (attacker_array[j] == i.first)
+            {
+                cnt_of_detected++;
+            }
+            else
+            {
+                missed[i.first]++;
+            }
+        }
+    }
+    double detection_rate = (double)((double)(cnt_of_detected) + eps) / (double)number_of_malnodes;
+    //検出率
+    string t2 = "DETECT-";
+    t2 += to_string(mode);
+    t2 += "-";
+    t2 += to_string(number_of_malnodes);
+    t2 += ".txt";
+    ofstream ofs3(t2, ios::app);
+    ofs3 << number_of_malnodes << " " << detection_rate << endl;
+    ofs3.close();
 }
 
 void edge_set_from_file(Graph &gr)
@@ -1672,15 +1713,15 @@ int main(int argc, char *argv[])
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
-    //int set_mode = atoi(argv[1]);
-    ////標準入力から変更可能にする
-    //number_of_malnodes = atoi(argv[2]);
-    //set_simulate_mode(set_mode);
-    //for (int i = 0; i < 100; i++)
-    //{
-    //    simulate();
-    //}
-    set_simulate_mode(3);
-    simulate();
+    int set_mode = atoi(argv[1]);
+    //標準入力から変更可能にする
+    number_of_malnodes = atoi(argv[2]);
+    set_simulate_mode(set_mode);
+    for (int i = 0; i < 10; i++)
+    {
+        simulate();
+    }
+    //set_simulate_mode(3);
+    //simulate();
     return 0;
 }
