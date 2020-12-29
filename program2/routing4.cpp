@@ -661,9 +661,10 @@ void AttackerSet()
 {
     attacker_array.resize(number_of_malnodes); //攻撃ノード数に配列をリサイズする
     //攻撃ノードのノード番号を登録しておく
+    //ランダムに変更
     for (int i = 0; i < number_of_malnodes; i++)
     {
-        attacker_array[i] = 3 * (i + 1);
+        attacker_array[i] = rnd(1, d - 1);
     }
 }
 
@@ -831,7 +832,7 @@ void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst)
             double to_etx = 0.0;
             dijkstra_etx(gr, num_edge.to, cs);                 //num_edge.to から宛先までのetxを求めている
             to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //sourceから宛先へのetx
-            cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
+            //cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
             pq_onehop_fromsource.emplace(to_etx, num_edge.to);
         }
         else
@@ -854,7 +855,7 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
     {
         if (bf_dist[i] == hop_num) //Hop数のノードについて
         {
-            cout << i << endl;
+            //cout << i << endl;
             for (auto num_edge : gr[i])
             {
                 //すべてのnum_edge.toに対して宛先へ到達できるかをdfsを使って探索
@@ -869,7 +870,7 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     double to_etx = 0.0;
                     dijkstra_etx(gr, num_edge.to, cs);                 //num_edge.to から宛先までのetxを求めている
                     to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //source(送信元ではない)から宛先へのetx
-                    cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
+                    //cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
                     pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                 }
                 else
@@ -906,7 +907,7 @@ void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, i
                 //n[num_edge.to].recvmap[p] = true; //toのrecvmapを更新
                 //n[num_edge.to].q.push(p);         //toのキューにパケットをプッシュ
                 WhenRecvPacketSuc(gr, n, on, num_edge.to, node_num, p);
-                cout << "Node " << num_edge.to << " received packet " << p << " from Node " << node_num << endl;
+                //cout << "Node " << num_edge.to << " received packet " << p << " from Node " << node_num << endl;
                 //modeに応じて攻撃・攻撃+測定を切り替える
                 BlackholeAttackWithmode(gr, n, on, node_num, num_edge.to, p);
             }
@@ -916,9 +917,9 @@ void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, i
                 //n[node_num].sendmap[p] |= false; //orにする
                 //n[num_edge.to].recvmap[p] = false; //
                 WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, p);
-                cout << "Node " << num_edge.to << " dropped packet " << p << " ((from  Node " << node_num << endl;
+                //cout << "Node " << num_edge.to << " dropped packet " << p << " ((from  Node " << node_num << endl;
             }
-            //cout << num_edge.to << " ";
+            ////cout << num_edge.to << " ";
         }
     }
     else
@@ -976,7 +977,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
             }
             else //重複を避けるためパケットをドロップ
             {
-                cout << "Node " << node_num << " Drop packet " << packet_num << " to prevent duplicate (to Node" << num_edge.to << endl;
+                //cout << "Node " << node_num << " Drop packet " << packet_num << " to prevent duplicate (to Node" << num_edge.to << endl;
                 WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
                 if (mode == 3) //提案手法あり
                 {
@@ -986,7 +987,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
         } //すでに優先度の高いノードが送信している場合
         else
         {
-            cout << "Node " << node_num << " Drop packet " << packet_num << " to prevent duplicate (to Node" << num_edge.to << endl;
+            //cout << "Node " << node_num << " Drop packet " << packet_num << " to prevent duplicate (to Node" << num_edge.to << endl;
             WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
             //WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
             if (mode == 3) //提案手法あり
@@ -1000,7 +1001,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
     }
     else //ノード番号が等しい場合はそのパケットについては調べ終わったのでcontinue
     {
-        //cout << "continue : queue " << que.front() << " node num " << tmp2_pq_onehop_fromsource.top().second << endl;
+        ////cout << "continue : queue " << que.front() << " node num " << tmp2_pq_onehop_fromsource.top().second << endl;
         //que.pop();
         tmp2_pq_onehop_fromsource = tmp_pq_onehop_fromsource; //番号をリセット(priorityqueueをもとに戻す)
     }                                                         //end while for pq
@@ -1032,7 +1033,7 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
         else
         {
             //重複時のメッセージ
-            cout << "Node " << num_edge.to << " ignoring packet " << packet_num << " due to duplicate" << endl;
+            //cout << "Node " << num_edge.to << " ignoring packet " << packet_num << " due to duplicate" << endl;
             //SendFromlessに書く
             WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
             //WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
@@ -1147,7 +1148,7 @@ void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     //Recv
     n[node_num_recv].recvmap[packet_num] = true; //受信マップをfalseならtrue
     //受信成功時のメッセージ
-    cout << "Node " << node_num_recv << " received packet " << packet_num << " from Node " << node_num_send << endl;
+    //cout << "Node " << node_num_recv << " received packet " << packet_num << " from Node " << node_num_send << endl;
     n[node_num_recv].q.push(packet_num);
     //宛先がpacket_step個パケットを受信したときの処理
     if (mode >= 2) //信頼値測定を行うかをモードで分岐する
@@ -1160,7 +1161,7 @@ void WhenRecvPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
 void WhenRecvPacketFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send, int packet_num)
 {
     n[node_num_recv].recvmap[packet_num] |= false; //受信マップをfalse
-    cout << "Node " << node_num_recv << " dropped packet " << packet_num << " ((from Node " << node_num_send << endl;
+    //cout << "Node " << node_num_recv << " dropped packet " << packet_num << " ((from Node " << node_num_send << endl;
     //dtv/itvにおける失敗回数を増やす
     CntFal(gr, n, on, node_num_recv, node_num_send);
 }
@@ -1202,7 +1203,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             cntint_flush_nb(on, gr, node_num);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
-            cout << "Node " << node_num << " priority " << pq_onehop_fromsource.size() << endl;
+            //cout << "Node " << node_num << " priority " << pq_onehop_fromsource.size() << endl;
             //キューが空になるまでdo
             while (!n[node_num].q.empty())
             {
@@ -1264,7 +1265,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
     //送信元から2ホップ以上
     for (int i = 1; i < mxhop; i++)
     {
-        cout << i + 1 << " hop" << endl;
+        //cout << i + 1 << " hop" << endl;
         //まだ調べていないノードがある場合
         //if (checked[pq_intermediate[i].top().second] == false) //ホップ数主体に書き換える
         //{
@@ -1283,7 +1284,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             cntint_flush_nb(on, gr, node_num_sev);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
-            cout << "Node " << node_num_sev << " priority " << pq_intermediate[i].size() << endl;
+            //cout << "Node " << node_num_sev << " priority " << pq_intermediate[i].size() << endl;
             while (!n[node_num_sev].q.empty())
             {
                 int pakcet_num = n[node_num_sev].q.front();
@@ -1321,11 +1322,11 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     //攻撃ノードの情報を追加
     //パケットはuID指定
     set_map(node);
-    seen.assign(N, false);        //seen(訪問配列)をリセット
-    bfs(g);                       //幅優先探索によりホップ数計算
-    int packet_step_send = 10000; //パケットのstep数(packet_stepと同名にしない)
-    int packet_total_num = 0;     //パケットのカウンター
-    if (mode >= 2)                //測定あり
+    seen.assign(N, false);       //seen(訪問配列)をリセット
+    bfs(g);                      //幅優先探索によりホップ数計算
+    int packet_step_send = 1000; //パケットのstep数(packet_stepと同名にしない)
+    int packet_total_num = 0;    //パケットのカウンター
+    if (mode >= 2)               //測定あり
     {
         array_ONodeinit(obs_node); //ONodeのdtv配列をリサイズする
     }
@@ -1359,8 +1360,8 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     if (mode >= 2)
     {
         get_detect_rate();
-        simulate_end(g, node);
     }
+    simulate_end(g, node);
     //FreeNodeArray(node);
 }
 
@@ -1454,7 +1455,7 @@ void simulate()
     }
     else
     {
-        cout << "Invalid mode" << endl;
+        //cout << "Invalid mode" << endl;
     }
 }
 //送受信マップのセット
@@ -1475,32 +1476,32 @@ void show_map(Node node[])
 {
     for (int i = 0; i < N; i++)
     {
-        cout << "Node" << i << " ";
+        //cout << "Node" << i << " ";
     }
-    cout << endl;
+    //cout << endl;
     for (int i = 0; i < numberofpackets; i++)
     {
-        cout << i << " ";
+        //cout << i << " ";
         if (node[0].sendmap[i])
         {
-            cout << "true ";
+            //cout << "true ";
         }
         else
         {
-            cout << "false ";
+            //cout << "false ";
         }
         for (int j = 1; j < N; j++)
         {
             if (node[j].recvmap[i])
             {
-                cout << "true ";
+                //cout << "true ";
             }
             else
             {
-                cout << "false ";
+                //cout << "false ";
             }
         }
-        cout << endl;
+        //cout << endl;
     }
 }
 
@@ -1542,15 +1543,15 @@ void get_detect_rate()
         }
     }
     double detection_rate = (double)((double)(cnt_of_detected) + eps) / (double)number_of_malnodes;
-    cout << "Detection Rate: " << detection_rate << endl;
-    cout << "Count Missed : " << missed.size() << endl; //誤検知
+    //cout << "Detection Rate: " << detection_rate << endl;
+    //cout << "Count Missed : " << missed.size() << endl; //誤検知
     for (int i = 0; i < N; i++)
     {
         if (malnodes_array[i].size() > 0)
         {
             for (int j = 0; j < malnodes_array[i].size(); j++)
             {
-                cout << "Node " << i << ": malicious " << malnodes_array[i][j] << endl;
+                //cout << "Node " << i << ": malicious " << malnodes_array[i][j] << endl;
             }
         }
     }
@@ -1561,13 +1562,22 @@ void show_pdr(Node node[])
 {
     double recv = count(node[N - 1].recvmap, node[N - 1].recvmap + numberofpackets, true);
     recv /= (double)(numberofpackets);
-    cout << "PDR: " << recv << endl;
+    //cout << "PDR: " << recv << endl;
 }
 
 //結果を書き込んでおく
 void simulate_end(Graph &g, Node node[])
 {
-    //結果はcsv等に保存？
+    WritePDR(node);
+    if (mode >= 2)
+    {
+        WriteTopology(g, node);
+        WriteDetect();
+    }
+    //string result = "xxx.csv";
+}
+void WriteTopology(Graph &g, Node node[])
+{
     string s = "fin_topology.txt";
     ofstream ofs(s);
     for (int i = 0; i < N; i++)
@@ -1584,8 +1594,6 @@ void simulate_end(Graph &g, Node node[])
         }
     }
     ofs.close();
-    WritePDR(node);
-    //string result = "xxx.csv";
 }
 void WritePDR(Node node[])
 {
@@ -1717,7 +1725,7 @@ int main(int argc, char *argv[])
     //標準入力から変更可能にする
     number_of_malnodes = atoi(argv[2]);
     set_simulate_mode(set_mode);
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 100; i++)
     {
         simulate();
     }

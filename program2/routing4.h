@@ -30,8 +30,8 @@ double constant_suc_rate = 0.8;                            //通信成功率(定
 double threshold = 0.5000;                                 // 信頼値の閾値
 double theta = 0.5;                                        //直接的な信頼値の重み
 double gm = 1.01;                                          //dtvを求める際の悪意のある動作betaの重み
-const int packet_step = 5000;                              //ラウンドで送信するパケット数
-const int numberofpackets = 50000;                         //送信するパケット数
+const int packet_step = 500;                               //ラウンドで送信するパケット数
+const int numberofpackets = 10000;                         //送信するパケット数
 const int mx_round = (int)(numberofpackets / packet_step); //ラウンドの最大
 double tmpetx = 0.0;                                       //etx計算用
 vector<bool> seen;                                         // 到達可能かどうかを調べる
@@ -228,6 +228,7 @@ void show_map(Node node[]);
 void get_detect_rate();
 void show_pdr(Node node[]);
 void simulate_end(Graph &g, Node node[]);
+void WriteTopology(Graph &g, Node node[]);
 void WritePDR(Node node[]);
 void WriteDetect();
 void edge_set_from_file(Graph &gr);
