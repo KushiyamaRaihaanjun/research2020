@@ -14,16 +14,17 @@
 #include <bitset>
 #include <stack>
 #include <queue>
+#include <memory>
 #include "Rand.h"
 using namespace std;
 typedef long long int lli;
 
 #define INF 1e30
-const int N = 50;                  // ノード数
-const int d = N - 1;               //宛先
-int send_round = 0;                //ラウンド
-const int number_of_malnodes = 10; //悪意のあるノード数
-int mode = 0;                      //実験モード
+const int N = 50;            // ノード数
+const int d = N - 1;         //宛先
+int send_round = 0;          //ラウンド
+int number_of_malnodes = 10; //悪意のあるノード数
+int mode = 0;                //実験モード
 //ノードのリンク情報(通信成功率等)を追加(初めは固定値)
 double constant_suc_rate = 0.8;                            //通信成功率(定数)
 double threshold = 0.5000;                                 // 信頼値の閾値
@@ -71,8 +72,8 @@ struct Node
     double x, y;
     int alpha;
     int beta;
-    bool sendmap[numberofpackets];
-    bool recvmap[numberofpackets];
+    bool *sendmap = new bool[numberofpackets];
+    bool *recvmap = new bool[numberofpackets];
     queue<int> q;
     int state;
     /*0(emptyset)
@@ -220,12 +221,13 @@ void simulate_without_Tv_with_at();
 void simulate_with_Tv_with_at();
 void simulate_with_Suggest_with_attack();
 void set_simulate_mode(int m);
+void FreeNodeArray(Node node[]);
 void simulate();
 void set_map(Node node[]);
 void show_map(Node node[]);
 void get_detect_rate();
 void show_pdr(Node node[]);
-void simulate_end(Graph &g);
+void simulate_end(Graph &g, Node node[]);
 void edge_set_from_file(Graph &gr);
 void edge_set(Graph &gr);
 vector<vector<int>> GetAllRoute();

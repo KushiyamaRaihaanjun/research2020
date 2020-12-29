@@ -1359,8 +1359,9 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     if (mode >= 2)
     {
         get_detect_rate();
-        simulate_end(g);
+        simulate_end(g, node);
     }
+    //FreeNodeArray(node);
 }
 
 ////////////////////////シミュレーション・結果処理関連//////////////////////////////
@@ -1372,9 +1373,12 @@ void simulate_without_Tv_without_at()
 {
     //接続情報を入力
     Graph g(N);
-    Node node[N];
+    std::unique_ptr<Node[]> node(new Node[N]);
     ONode obs_node[N];
-    OpportunisticRouting4(g, node, obs_node);
+    //攻撃ノードの情報を追加
+    //パケットはuID指定
+    OpportunisticRouting4(g, node.get(), obs_node);
+    node.release();
 }
 
 //測定なしかつ攻撃あり...1
@@ -1382,10 +1386,13 @@ void simulate_without_Tv_with_at()
 {
     //接続情報を入力
     Graph g(N);
-    Node node[N];
+    std::unique_ptr<Node[]> node(new Node[N]);
     ONode obs_node[N];
-    AttackerSet();
-    OpportunisticRouting4(g, node, obs_node);
+    //攻撃ノードの情報を追加
+    //パケットはuID指定
+    AttackerSet(); //攻撃ノード指定
+    OpportunisticRouting4(g, node.get(), obs_node);
+    node.release();
 }
 //測定ありかつ攻撃あり...2
 void simulate_with_Tv_with_at()
@@ -1394,12 +1401,13 @@ void simulate_with_Tv_with_at()
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    Node node[N];
+    std::unique_ptr<Node[]> node(new Node[N]);
     ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
     AttackerSet(); //攻撃ノード指定
-    OpportunisticRouting4(g, node, obs_node);
+    OpportunisticRouting4(g, node.get(), obs_node);
+    node.release();
 }
 //提案手法ありかつ攻撃あり...3
 void simulate_with_Suggest_with_attack()
@@ -1408,14 +1416,18 @@ void simulate_with_Suggest_with_attack()
     //ひとまずは考えない（手動でノードを接続）
     //接続情報を入力
     Graph g(N);
-    Node node[N];
+    std::unique_ptr<Node[]> node(new Node[N]);
     ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
     AttackerSet(); //攻撃ノード指定
-    OpportunisticRouting4(g, node, obs_node);
+    OpportunisticRouting4(g, node.get(), obs_node);
+    node.release();
 }
-
+void FreeNodeArray(Node node[])
+{
+    delete[] node;
+}
 //シミュレーションモードを変更する
 void set_simulate_mode(int m)
 {
@@ -1552,7 +1564,8 @@ void show_pdr(Node node[])
     cout << "PDR: " << recv << endl;
 }
 
-void simulate_end(Graph &g)
+//結果を書き込んでおく
+void simulate_end(Graph &g, Node node[])
 {
     //結果はcsv等に保存？
     string s = "fin_topology.txt";
@@ -1571,6 +1584,28 @@ void simulate_end(Graph &g)
         }
     }
     ofs.close();
+    ////ファイル名(PDR)
+    //string t1 = "PDR-";
+    //t1 += to_string(mode);
+    //t1 += "-";
+    //t1 += to_string(number_of_malnodes);
+    //t1 += ".txt";
+    ////終わり
+    ////PDRをファイルに書き込む
+    //ofstream ofs2(t1, ios::app);
+    //double recv = count(node[d].recvmap, node[d].recvmap + numberofpackets, true);
+    //recv /= (double)(numberofpackets);
+    //ofs2 << number_of_malnodes << " " << recv << endl; //悪意ノード数，PDR
+    //ofs2.close();
+    //
+    ////検出率
+    //string t2 = "DETECT-";
+    //t2 += to_string(mode);
+    //t2 += "-";
+    //t2 += to_string(number_of_malnodes);
+    //t2 += ".txt";
+    //ofstream ofs3(t2, ios::app);
+    //ofs3.close();
     //string result = "xxx.csv";
 }
 
@@ -1631,12 +1666,20 @@ void edge_set(Graph &gr)
 ///////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////main/////////////////////////////////////////
-int main(void)
+int main(int argc, char *argv[])
 {
     //0...単純な性能評価用
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
+    //int set_mode = atoi(argv[1]);
+    ////標準入力から変更可能にする
+    //number_of_malnodes = atoi(argv[2]);
+    //set_simulate_mode(set_mode);
+    //for (int i = 0; i < 100; i++)
+    //{
+    //    simulate();
+    //}
     set_simulate_mode(3);
     simulate();
     return 0;
