@@ -4,7 +4,7 @@ echo "complied"
 echo "mode 0"
 ./routing4 0 1
 echo "done"
-echo "mode 1(wAttack)"
+echo "mode 1(with Attack)"
 ./routing4 1 5
 ./routing4 1 10
 ./routing4 1 15
