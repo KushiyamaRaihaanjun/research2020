@@ -196,6 +196,7 @@ bool FindFromMaltable(int node_num, int key);
 void BlackholeAttack(Node node[], int node_num);
 void BlackholeAttackWithmode(Graph &gr, Node n[], ONode on[], int node_num, int num_edge_to, int packet_num);
 void AttackerSet();
+void AttackerSetFromFile();
 bool IsRegisteredAt(int key);
 void dfs(const Graph &gr, int ver);
 void bfs(const Graph &gr);

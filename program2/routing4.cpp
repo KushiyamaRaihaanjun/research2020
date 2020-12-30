@@ -668,6 +668,24 @@ void AttackerSet()
     }
 }
 
+void AttackerSetFromFile()
+{
+    attacker_array.resize(number_of_malnodes); //攻撃ノード数に配列をリサイズする
+    //攻撃ノードのノード番号をファイルから取得
+    //ランダムに変更
+    string s = "attacker-";
+    s += to_string(number_of_malnodes);
+    s += ".txt";
+    ifstream ifs(s);
+    int node_num;
+    for (int i = 0; i < number_of_malnodes; i++)
+    {
+        ifs >> node_num;
+        attacker_array[i] = node_num;
+    }
+    ifs.close();
+}
+
 //attackerの中に登録されているか調べる
 bool IsRegisteredAt(int key)
 {
@@ -1391,7 +1409,7 @@ void simulate_without_Tv_with_at()
     ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
-    AttackerSet(); //攻撃ノード指定
+    AttackerSetFromFile(); //攻撃ノード指定
     OpportunisticRouting4(g, node.get(), obs_node);
     node.release();
 }
@@ -1406,7 +1424,7 @@ void simulate_with_Tv_with_at()
     ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
-    AttackerSet(); //攻撃ノード指定
+    AttackerSetFromFile(); //攻撃ノード指定
     OpportunisticRouting4(g, node.get(), obs_node);
     node.release();
 }
@@ -1421,7 +1439,7 @@ void simulate_with_Suggest_with_attack()
     ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
-    AttackerSet(); //攻撃ノード指定
+    AttackerSetFromFile(); //攻撃ノード指定
     OpportunisticRouting4(g, node.get(), obs_node);
     node.release();
 }
@@ -1661,7 +1679,7 @@ void WriteDetect()
 void edge_set_from_file(Graph &gr)
 {
     //ファイルから読み込む形に変更する
-    ifstream ifs("topology1.txt", ios::in);
+    ifstream ifs("topology.txt", ios::in);
     if (!ifs)
     {
         cerr << "Error: file not opened" << endl;
@@ -1715,20 +1733,28 @@ void edge_set(Graph &gr)
 ///////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////main/////////////////////////////////////////
-int main(int argc, char *argv[])
+int main(void)
 {
     //0...単純な性能評価用
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
-    int set_mode = atoi(argv[1]);
+    //int set_mode = atoi(argv[1]);
     //標準入力から変更可能にする
-    number_of_malnodes = atoi(argv[2]);
-    set_simulate_mode(set_mode);
-    for (int i = 0; i < 100; i++)
+    //number_of_malnodes = atoi(argv[2]);
+    int set_mode, nmal_nodes; //モード，ノード数
+    ifstream ifs("simulate.txt", ios::in);
+    while (ifs >> set_mode >> nmal_nodes)
     {
+        set_simulate_mode(set_mode);
+        number_of_malnodes = nmal_nodes;
+        //for (int i = 0; i < 1; i++)
+        //{
         simulate();
+        //}
+        cout << "Done mode " << mode << " number_of_mal : " << number_of_malnodes << endl;
     }
+    ifs.close();
     //set_simulate_mode(3);
     //simulate();
     return 0;

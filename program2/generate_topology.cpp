@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
     f_name += ".txt";
     while (1)
     {
-        ofstream out("topology1.txt");
+        ofstream out("topology.txt");
         for (int i = 1; i < mx_hop; i++) //mx_hop-1..dstのみ
         {
             //loop開始(エッジ数)
