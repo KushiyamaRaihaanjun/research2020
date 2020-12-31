@@ -1748,7 +1748,7 @@ int main(void)
     {
         set_simulate_mode(set_mode);
         number_of_malnodes = nmal_nodes;
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 1; i++)
         {
             simulate();
         }

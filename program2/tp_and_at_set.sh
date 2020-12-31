@@ -11,4 +11,5 @@ g++ -o attacker -g3 generate_attacker.cpp -std=c++17 -I .
 ./attacker 50 15
 ./attacker 50 20
 ./attacker 50 25
+./attacker 50 30
 echo "Done"
