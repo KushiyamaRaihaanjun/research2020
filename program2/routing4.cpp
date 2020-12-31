@@ -1748,10 +1748,10 @@ int main(void)
     {
         set_simulate_mode(set_mode);
         number_of_malnodes = nmal_nodes;
-        //for (int i = 0; i < 1; i++)
-        //{
-        simulate();
-        //}
+        for (int i = 0; i < 100; i++)
+        {
+            simulate();
+        }
         cout << "Done mode " << mode << " number_of_mal : " << number_of_malnodes << endl;
     }
     ifs.close();
