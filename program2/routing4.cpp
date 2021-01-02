@@ -659,13 +659,33 @@ void BlackholeAttackWithmode(Graph &gr, Node n[], ONode on[], int node_num, int 
 //攻撃ノード指定
 void AttackerSet()
 {
+    //attackerの設定
+    if (attacker_array.size() > 0)
+    {
+        attacker_array.clear();
+    }
     attacker_array.resize(number_of_malnodes); //攻撃ノード数に配列をリサイズする
     //攻撃ノードのノード番号を登録しておく
     //ランダムに変更
+    //配列:1~48
+    vector<int> arr(d - 1);
+    for (int i = 0; i < d - 1; i++)
+    {
+        arr[i] = i + 1;
+    }
+    mt19937_64 mt_r(rnd());
+    shuffle(arr.begin(), arr.end(), mt_r);
+    string fname = "attacker-";
+    fname += to_string(number_of_malnodes);
+    fname += ".txt";
+    ofstream ofs(fname, ios::app);
     for (int i = 0; i < number_of_malnodes; i++)
     {
-        attacker_array[i] = rnd(1, d - 1);
+        attacker_array[i] = arr[i];
+        ofs << arr[i] << " ";
     }
+    ofs << endl;
+    ofs.close();
 }
 
 void AttackerSetFromFile()
@@ -1409,7 +1429,8 @@ void simulate_without_Tv_with_at()
     ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
-    AttackerSetFromFile(); //攻撃ノード指定
+    //AttackerSet();
+    //AttackerSetFromFile(); //攻撃ノード指定
     OpportunisticRouting4(g, node.get(), obs_node);
     node.release();
 }
@@ -1424,7 +1445,8 @@ void simulate_with_Tv_with_at()
     ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
-    AttackerSetFromFile(); //攻撃ノード指定
+    //AttackerSet();
+    //AttackerSetFromFile(); //攻撃ノード指定
     OpportunisticRouting4(g, node.get(), obs_node);
     node.release();
 }
@@ -1439,7 +1461,8 @@ void simulate_with_Suggest_with_attack()
     ONode obs_node[N];
     //攻撃ノードの情報を追加
     //パケットはuID指定
-    AttackerSetFromFile(); //攻撃ノード指定
+    //AttackerSet();
+    //AttackerSetFromFile(); //攻撃ノード指定
     OpportunisticRouting4(g, node.get(), obs_node);
     node.release();
 }
@@ -1748,7 +1771,9 @@ int main(void)
     {
         set_simulate_mode(set_mode);
         number_of_malnodes = nmal_nodes;
-        for (int i = 0; i < 100; i++)
+        //AttackerSet();
+        AttackerSetFromFile(); //攻撃ノード指定
+        for (int i = 0; i < 1; i++)
         {
             simulate();
         }
