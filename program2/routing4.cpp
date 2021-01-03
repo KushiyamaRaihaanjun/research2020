@@ -1127,6 +1127,9 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     //packet_step個送信したら更新
     if (mode >= 2)
     {
+        //送信カウント
+        //int send_cnt = count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true);
+        //if (send_cnt != 0 && send_cnt % packet_step == 0)
         if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
         {
             CalTrust_and_Filtering_nb(on, gr, node_num_send); //信頼値の計算と結果によるフィルタリング
@@ -1239,6 +1242,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             int node_num = pq_onehop_fromsource.top().second; //ノード番号(優先度順)
             send_round = 0;                                   //送信ラウンドのリセット
             cntint_flush_nb(on, gr, node_num);
+            cntint_flush_prevhop(on, gr, node_num);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             //cout << "Node " << node_num << " priority " << pq_onehop_fromsource.size() << endl;
@@ -1320,6 +1324,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             int node_num_sev = pq_intermediate[i].top().second; //ノード番号を取得
             send_round = 0;                                     //送信ラウンドのリセット
             cntint_flush_nb(on, gr, node_num_sev);
+            cntint_flush_prevhop(on, gr, node_num_sev);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             //cout << "Node " << node_num_sev << " priority " << pq_intermediate[i].size() << endl;
@@ -1360,7 +1365,6 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     //攻撃ノードの情報を追加
     //パケットはuID指定
     set_map(node);
-    seen.assign(N, false);       //seen(訪問配列)をリセット
     bfs(g);                      //幅優先探索によりホップ数計算
     int packet_step_send = 1000; //パケットのstep数(packet_stepと同名にしない)
     int packet_total_num = 0;    //パケットのカウンター
@@ -1372,8 +1376,10 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     {
         if (mode >= 2) //測定あり
         {
+            send_round = 0;             //ラウンドをリセット
             cntint_flush_all(obs_node); //インタラクション数をリセット
         }
+        seen.assign(N, false); //seen(訪問配列)をリセット
         Decidepriorityfromsource(g, node, 0, d);
         //packet_step_send個送信
         for (int i = packet_total_num; i < packet_total_num + packet_step_send; i++)
@@ -1585,7 +1591,7 @@ void get_detect_rate()
     }
     double detection_rate = (double)((double)(cnt_of_detected) + eps) / (double)number_of_malnodes;
     //cout << "Detection Rate: " << detection_rate << endl;
-    //cout << "Count Missed : " << missed.size() << endl; //誤検知
+    //cout << "Count Missed : " << missed.size() << " mode = " << mode << endl; //誤検知
     for (int i = 0; i < N; i++)
     {
         if (malnodes_array[i].size() > 0)
@@ -1697,11 +1703,32 @@ void WriteDetect()
     ofstream ofs3(t2, ios::app);
     ofs3 << number_of_malnodes << " " << detection_rate << endl;
     ofs3.close();
+    //誤検知率を求める
+    string t3 = "FP-";
+    t3 += to_string(mode);
+    t3 += "-";
+    t3 += to_string(number_of_malnodes);
+    t3 += ".txt";
+    //(誤検知した数(悪意ノードを除く))/通常ノードの数
+    double fp_rate = (double)((double)(missed.size())) / (double)(N - number_of_malnodes); //誤検知率;
+    ofstream ofs4(t3, ios::app);
+    ofs4 << number_of_malnodes << " " << fp_rate << endl;
+    ofs4.close();
 }
 
 void edge_set_from_file(Graph &gr)
 {
     //ファイルから読み込む形に変更する
+    if (gr.size() > 0)
+    {
+        for (int i = 0; i < N; i++)
+        {
+            if (gr[i].size() > 0)
+            {
+                gr[i].clear();
+            }
+        }
+    }
     ifstream ifs("topology.txt", ios::in);
     if (!ifs)
     {
@@ -1780,7 +1807,5 @@ int main(void)
         cout << "Done mode " << mode << " number_of_mal : " << number_of_malnodes << endl;
     }
     ifs.close();
-    //set_simulate_mode(3);
-    //simulate();
     return 0;
 }
