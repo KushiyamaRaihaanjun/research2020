@@ -1242,7 +1242,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             int node_num = pq_onehop_fromsource.top().second; //ノード番号(優先度順)
             send_round = 0;                                   //送信ラウンドのリセット
             cntint_flush_nb(on, gr, node_num);
-            cntint_flush_prevhop(on, gr, node_num);
+            //cntint_flush_prevhop(on, gr, node_num);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             //cout << "Node " << node_num << " priority " << pq_onehop_fromsource.size() << endl;
@@ -1324,7 +1324,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             int node_num_sev = pq_intermediate[i].top().second; //ノード番号を取得
             send_round = 0;                                     //送信ラウンドのリセット
             cntint_flush_nb(on, gr, node_num_sev);
-            cntint_flush_prevhop(on, gr, node_num_sev);
+            //cntint_flush_prevhop(on, gr, node_num_sev);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             //cout << "Node " << node_num_sev << " priority " << pq_intermediate[i].size() << endl;
@@ -1370,7 +1370,15 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     int packet_total_num = 0;    //パケットのカウンター
     if (mode >= 2)               //測定あり
     {
-        array_ONodeinit(obs_node); //ONodeのdtv配列をリサイズする
+        array_ONodeinit(obs_node); //ONodeのdtv配列をリセットする
+    }
+    //悪意ノードのマップを初期化
+    if (malnodes_array.size() > 0)
+    {
+        for (int i = 0; i < N; i++)
+        {
+            malnodes_array[i].clear();
+        }
     }
     while (packet_total_num < numberofpackets) //パケットの合計数が総パケット数より小さい間 do
     {
