@@ -490,3 +490,4 @@ Node 3: malicious 5
         - False Positiveを測定する仕組みを作った
 - メモ(1/4)
     - malnodes_arrayのリセットができてなかった
+    - To do: トポロジーを入れ替える,パラメータを調節する
