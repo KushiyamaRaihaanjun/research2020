@@ -1808,7 +1808,7 @@ int main(void)
         number_of_malnodes = nmal_nodes;
         //AttackerSet();
         AttackerSetFromFile(); //攻撃ノード指定
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 1; i++)
         {
             simulate();
         }
