@@ -1806,8 +1806,8 @@ int main(void)
     {
         set_simulate_mode(set_mode);
         number_of_malnodes = nmal_nodes;
-        //AttackerSet();
-        AttackerSetFromFile(); //攻撃ノード指定
+        AttackerSet();
+        //AttackerSetFromFile(); //攻撃ノード指定
         for (int i = 0; i < 1; i++)
         {
             simulate();
