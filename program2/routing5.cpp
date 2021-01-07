@@ -1923,10 +1923,11 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
+    int cnt_simulation = 1;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < cnt_simulation; i++)
     {
         simulate();
     }
@@ -1941,7 +1942,7 @@ int main(void)
         for (int j = 1; j <= 3; j++)
         {
             set_simulate_mode(j);
-            for (int k = 0; k < 100; k++)
+            for (int k = 0; k < cnt_simulation; k++)
             {
                 simulate();
             }
