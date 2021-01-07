@@ -1,9 +1,10 @@
-/*From 2020-12-26
+/*From 2021-1-07
 ソースコードを分割(routing4.hを作った)
+routing5.hを作った
 信頼値測定を加えた,送信方法を変更したバージョン4
 routing2にも書きかけあり
 */
-#include "routing4.h"
+#include "routing5.h"
 //三進法変換
 int threearray[18];
 void num_to_three(int x)
@@ -1360,8 +1361,8 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
 //ルーチングを行う関数
 void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
 {
-    //edge_set(g); //エッジをセット
-    edge_set_from_file(g);
+    edge_set(g); //エッジをセット
+    //edge_set_from_file(g);
     //攻撃ノードの情報を追加
     //パケットはuID指定
     set_map(node);
@@ -1765,19 +1766,143 @@ void edge_set(Graph &gr)
     //gr[3].push_back(Edge(4, 1.0));
 
     //ノード番号，通信成功率の組
-    gr[0].push_back(Edge(1, 0.8));
-    gr[0].push_back(Edge(2, 0.8));
-    gr[0].push_back(Edge(3, 0.8));
-    //gr[1].push_back(Edge(2, 0.8));
-    gr[1].push_back(Edge(4, 0.8));
-    gr[1].push_back(Edge(5, 0.8));
-    //gr[2].push_back(Edge(3, 0.8));
-    gr[2].push_back(Edge(4, 0.6));
-    gr[2].push_back(Edge(5, 0.6));
-    gr[3].push_back(Edge(4, 0.6));
-    gr[3].push_back(Edge(5, 0.6));
-    gr[4].push_back(Edge(6, 0.8));
-    gr[5].push_back(Edge(6, 0.8));
+    //gr[0].push_back(Edge(1, 0.8));
+    //gr[0].push_back(Edge(2, 0.8));
+    //gr[0].push_back(Edge(3, 0.8));
+    ////gr[1].push_back(Edge(2, 0.8));
+    //gr[1].push_back(Edge(4, 0.8));
+    //gr[1].push_back(Edge(5, 0.8));
+    ////gr[2].push_back(Edge(3, 0.8));
+    //gr[2].push_back(Edge(4, 0.6));
+    //gr[2].push_back(Edge(5, 0.6));
+    //gr[3].push_back(Edge(4, 0.6));
+    //gr[3].push_back(Edge(5, 0.6));
+    //gr[4].push_back(Edge(6, 0.8));
+    //gr[5].push_back(Edge(6, 0.8));
+    //グラフが空でないなら空にする
+    if (gr.size() > 0)
+    {
+        for (int i = 0; i < N; i++)
+        {
+            if (gr[i].size() > 0)
+            {
+                gr[i].clear();
+            }
+        }
+    }
+    int cnt = 0;
+    seen.assign(N, false);
+    int dst = N - 1;
+    int mx_hop = rnd(7, 10);                 //最大Hop数(6~9)
+    vector<vector<int>> nodes_array(mx_hop); //ホップ数，そのホップ数におけるノード番号
+    //nodes_array.resize(mx_hop);               //サイズをホップ数にする
+    nodes_array[0].push_back(0);              //0ホップは0
+    nodes_array[mx_hop - 1].push_back(N - 1); //最終ホップはN-1
+    map<int, int> node_map;
+    int nodes_array_total_size = 0;
+    while (1)
+    {
+        for (int i = 1; i < mx_hop - 1; i++)
+        {
+            int hop_node_number = rnd(6, 12);       //n hopのノード数
+            nodes_array[i].resize(hop_node_number); //ノード数にリサイズする
+            nodes_array_total_size += hop_node_number;
+        }
+        if (nodes_array_total_size != N - 2)
+        {
+            nodes_array_total_size = 0;
+            continue;
+        }
+        for (int i = 1; i < mx_hop - 1; i++)
+        {
+            int j = 0;
+            while (j < nodes_array[i].size())
+            {
+                int node_num = rnd(1, dst - 1); //ノード番号を生成
+                if (node_map.find(node_num) == node_map.end())
+                {
+                    nodes_array[i][j] = node_num;
+                    node_map[node_num]++;
+                    j++;
+                }
+            }
+            //rest_node_num -= hop_node_number; //ノード数だけ減らす
+            if (node_map.size() == N - 2)
+            {
+                break;
+            }
+        }
+        //終了条件はジャスト
+        if (node_map.size() == N - 2)
+        {
+            break;
+        }
+        else
+        {
+            node_map.clear();
+            for (int i = 1; i < mx_hop - 1; i++)
+            {
+                nodes_array[i].clear();
+            }
+        }
+    }
+    map<pair<int, int>, int> nodeval; //fromとtoのペアを保持
+    int f_number = 0;
+    string f_name = "topology";
+    f_name += to_string(f_number);
+    f_name += ".txt";
+    while (1)
+    {
+        ofstream out("topology.txt");
+        for (int i = 1; i < mx_hop; i++) //mx_hop-1..dstのみ
+        {
+            //loop開始(エッジ数)
+            if (i <= mx_hop - 2)
+            {
+                for (int j = 0; j < 5 * nodes_array[i].size(); j++)
+                {
+                    int from = nodes_array[i - 1][rnd(nodes_array[i - 1].size())]; //from
+                    int to = nodes_array[i][rnd(nodes_array[i].size())];           //to
+                    double rate = rnd.randDoubleRange(0.5, 0.8);                   //通信成功率
+                    if (nodeval[{from, to}] == 0 && from != to)                    //まだ接続していないノードのみ接続する
+                    {
+                        gr[from].push_back(Edge(to, rate));
+                        out << from << " " << to << " " << rate << endl;
+                        nodeval[{from, to}]++;
+                    }
+                }
+            }
+            else //i==mxhop-1のときのみの処理
+            {
+                for (int j = 0; j < nodes_array[i - 1].size(); j++)
+                {
+                    int from = nodes_array[i - 1][j];
+                    int to = dst;
+                    double rate = rnd.randDoubleRange(0.5, 0.8);
+                    gr[from].push_back(Edge(to, rate));
+                    out << from << " " << to << " " << rate << endl;
+                }
+            }
+            //loop終
+        }
+        //dfsで接続性チェック
+        dfs(gr, 0);
+        nodeval.clear();
+        //gr.clear();
+        if (seen[dst] == true)
+        {
+            out.close();
+            break;
+        }
+        else
+        {
+            gr.clear();
+            out.close();
+            seen.assign(N, false);
+        }
+    }
+    //ファイル書き込み
+
     checked.resize(gr[0].size());
     //送信元から1hopをチェックしたかどうか
     fill(checked.begin(), checked.end(), false);
