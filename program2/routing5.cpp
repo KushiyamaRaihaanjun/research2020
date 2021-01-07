@@ -1922,23 +1922,31 @@ int main(void)
     //1...攻撃のみ
     //2...攻撃・信頼値測定あり
     //3...提案手法
-    //int set_mode = atoi(argv[1]);
-    //標準入力から変更可能にする
-    //number_of_malnodes = atoi(argv[2]);
-    int set_mode, nmal_nodes; //モード，ノード数
-    ifstream ifs("simulate.txt", ios::in);
-    while (ifs >> set_mode >> nmal_nodes)
+    //ifstream ifs("simulate.txt", ios::in);
+    //悪意ノードなしの場合
+    set_simulate_mode(0);
+    number_of_malnodes = 1;
+    for (int i = 0; i < 100; i++)
     {
-        set_simulate_mode(set_mode);
-        number_of_malnodes = nmal_nodes;
+        simulate();
+    }
+    cout << "mode 0 done" << endl;
+    //悪意ノードありの場合
+    for (int i = 5; i <= 30; i += 5)
+    {
+        //攻撃ノード数を変化
+        number_of_malnodes = i;
         AttackerSet();
         //AttackerSetFromFile(); //攻撃ノード指定
-        for (int i = 0; i < 100; i++)
+        for (int j = 1; j <= 3; j++)
         {
-            simulate();
+            set_simulate_mode(j);
+            for (int k = 0; k < 100; k++)
+            {
+                simulate();
+            }
+            cout << "Done mode " << mode << " numberofmalnodes" << number_of_malnodes << endl;
         }
-        cout << "Done mode " << mode << " number_of_mal : " << number_of_malnodes << endl;
     }
-    ifs.close();
     return 0;
 }
