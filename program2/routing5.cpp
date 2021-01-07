@@ -1758,27 +1758,6 @@ void edge_set_from_file(Graph &gr)
 }
 void edge_set(Graph &gr)
 {
-    //gr[0].push_back(Edge(1, 0.8));
-    //gr[0].push_back(Edge(2, 0.8));
-    //gr[0].push_back(Edge(3, 0.8));
-    //gr[1].push_back(Edge(4, 1.0));
-    //gr[2].push_back(Edge(4, 1.0));
-    //gr[3].push_back(Edge(4, 1.0));
-
-    //ノード番号，通信成功率の組
-    //gr[0].push_back(Edge(1, 0.8));
-    //gr[0].push_back(Edge(2, 0.8));
-    //gr[0].push_back(Edge(3, 0.8));
-    ////gr[1].push_back(Edge(2, 0.8));
-    //gr[1].push_back(Edge(4, 0.8));
-    //gr[1].push_back(Edge(5, 0.8));
-    ////gr[2].push_back(Edge(3, 0.8));
-    //gr[2].push_back(Edge(4, 0.6));
-    //gr[2].push_back(Edge(5, 0.6));
-    //gr[3].push_back(Edge(4, 0.6));
-    //gr[3].push_back(Edge(5, 0.6));
-    //gr[4].push_back(Edge(6, 0.8));
-    //gr[5].push_back(Edge(6, 0.8));
     //グラフが空でないなら空にする
     if (gr.size() > 0)
     {
