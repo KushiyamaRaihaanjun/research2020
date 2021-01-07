@@ -1,5 +1,6 @@
 //長過ぎるのでプロトタイプ宣言などを分割(12/18)
 //送信方法を変更(12/26)
+//最適化など(1/7)
 #ifndef routing4header
 #define routing4header
 #include <stdio.h>
