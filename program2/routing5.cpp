@@ -524,7 +524,7 @@ void Init_lambda(ONode on[])
     {
         for (int j = 0; j < N; j++)
         {
-            on[j].lambda[i] = 0.5;
+            on[j].lambda[i] = theta;
         }
     }
 }
@@ -1902,7 +1902,7 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
-    int cnt_simulation = 100;
+    int cnt_simulation = 1;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;
