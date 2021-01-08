@@ -260,7 +260,7 @@ void cntint_flush(ONode on[], int node_num_from, int node_num_to)
     //ラウンドがゼロのときは初期値1をセット
     if (send_round == 0)
     {
-        on[node_num_to].alpha[node_num_from][send_round] = 3;
+        on[node_num_to].alpha[node_num_from][send_round] = 4;
         on[node_num_to].beta[node_num_from][send_round] = 2;
     } //そうでない場合は前のものを代入しておく
     else
