@@ -1838,7 +1838,7 @@ void edge_set(Graph &gr)
             //loop開始(エッジ数)
             if (i <= mx_hop - 2)
             {
-                for (int j = 0; j < 6 * nodes_array[i].size(); j++)
+                for (int j = 0; j < 10 * nodes_array[i].size(); j++)
                 {
                     int from = nodes_array[i - 1][rnd(nodes_array[i - 1].size())]; //from
                     int to = nodes_array[i][rnd(nodes_array[i].size())];           //to
@@ -1902,7 +1902,7 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
-    int cnt_simulation = 100;
+    int cnt_simulation = 1;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;
