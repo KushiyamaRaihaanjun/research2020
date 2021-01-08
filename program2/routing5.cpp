@@ -260,8 +260,8 @@ void cntint_flush(ONode on[], int node_num_from, int node_num_to)
     //ラウンドがゼロのときは初期値1をセット
     if (send_round == 0)
     {
-        on[node_num_to].alpha[node_num_from][send_round] = 1;
-        on[node_num_to].beta[node_num_from][send_round] = 1;
+        on[node_num_to].alpha[node_num_from][send_round] = 3;
+        on[node_num_to].beta[node_num_from][send_round] = 2;
     } //そうでない場合は前のものを代入しておく
     else
     {
@@ -1902,7 +1902,7 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
-    int cnt_simulation = 100;
+    int cnt_simulation = 1;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;
