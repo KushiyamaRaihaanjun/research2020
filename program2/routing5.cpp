@@ -260,8 +260,8 @@ void cntint_flush(ONode on[], int node_num_from, int node_num_to)
     //ラウンドがゼロのときは初期値1をセット
     if (send_round == 0)
     {
-        on[node_num_to].alpha[node_num_from][send_round] = 4;
-        on[node_num_to].beta[node_num_from][send_round] = 2;
+        on[node_num_to].alpha[node_num_from][send_round] = 1;
+        on[node_num_to].beta[node_num_from][send_round] = 1;
     } //そうでない場合は前のものを代入しておく
     else
     {
@@ -1129,9 +1129,9 @@ void WhenSendPacketSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int n
     if (mode >= 2)
     {
         //送信カウント
-        //int send_cnt = count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true);
-        //if (send_cnt != 0 && send_cnt % packet_step == 0)
-        if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
+        int send_cnt = count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true);
+        if (send_cnt != 0 && send_cnt % packet_step == 0)
+        //if (count(n[node_num_send].sendmap, n[node_num_send].sendmap + numberofpackets, true) == packet_step * (send_round + 1))
         {
             CalTrust_and_Filtering_nb(on, gr, node_num_send); //信頼値の計算と結果によるフィルタリング
             CalTrustWhileSending(on, gr, node_num_send);      //前ホップノードからの信頼値測定
