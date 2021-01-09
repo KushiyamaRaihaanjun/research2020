@@ -1925,7 +1925,7 @@ int main(void)
     int cnt_simulation = 1;
     //悪意ノードなしの場合
     set_simulate_mode(0);
-    number_of_malnodes = 1;
+    number_of_malnodes = 100;
     for (int i = 0; i < cnt_simulation; i++)
     {
         simulate();
