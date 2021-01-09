@@ -918,12 +918,16 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
                     }
-                    else
+                    else if (mode == 1)
                     {
                         if (pq_intermediate[hop_num].size() <= 5)
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
+                    }
+                    else
+                    {
+                        pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                     }
                 }
                 else
