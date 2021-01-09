@@ -1262,7 +1262,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             int node_num = pq_onehop_fromsource.top().second; //ノード番号(優先度順)
             send_round = 0;                                   //送信ラウンドのリセット
             cntint_flush_nb(on, gr, node_num);
-            cntint_flush_prevhop(on, gr, node_num);
+            //cntint_flush_prevhop(on, gr, node_num);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             //cout << "Node " << node_num << " priority " << pq_onehop_fromsource.size() << endl;
@@ -1344,7 +1344,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             int node_num_sev = pq_intermediate[i].top().second; //ノード番号を取得
             send_round = 0;                                     //送信ラウンドのリセット
             cntint_flush_nb(on, gr, node_num_sev);
-            cntint_flush_prevhop(on, gr, node_num_sev);
+            //cntint_flush_prevhop(on, gr, node_num_sev);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             //cout << "Node " << node_num_sev << " priority " << pq_intermediate[i].size() << endl;
@@ -1858,7 +1858,7 @@ void edge_set(Graph &gr)
             //loop開始(エッジ数)
             if (i <= mx_hop - 2)
             {
-                for (int j = 0; j < 15 * nodes_array[i].size(); j++)
+                for (int j = 0; j < 10 * nodes_array[i].size(); j++)
                 {
                     int from = nodes_array[i - 1][rnd(nodes_array[i - 1].size())]; //from
                     int to = nodes_array[i][rnd(nodes_array[i].size())];           //to
