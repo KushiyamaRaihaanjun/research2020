@@ -911,24 +911,25 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //source(送信元ではない)から宛先へのetx
                                                                        //cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
                                                                        //priority_queueのサイズ制限（信頼値測定時）
-                    if (mode == 0)
-                    {
-                        pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
-                    }
-                    else if (mode == 1)
-                    {
-                        if (pq_intermediate[hop_num].size() <= 6)
-                        {
-                            pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
-                        }
-                    }
-                    else
-                    {
-                        if (pq_intermediate[hop_num].size() <= 10 && !FindFromMaltable(i, num_edge.to))
-                        {
-                            pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
-                        }
-                    }
+                    pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
+                    //if (mode == 0)
+                    //{
+                    //    pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
+                    //}
+                    //else if (mode == 1)
+                    //{
+                    //    if (pq_intermediate[hop_num].size() <= 6)
+                    //    {
+                    //        pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    if (pq_intermediate[hop_num].size() <= 10 && !FindFromMaltable(i, num_edge.to))
+                    //    {
+                    //        pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
+                    //    }
+                    //}
                 }
                 else
                 {
@@ -1856,7 +1857,7 @@ void edge_set(Graph &gr)
             //loop開始(エッジ数)
             if (i <= mx_hop - 2)
             {
-                for (int j = 0; j < 10 * nodes_array[i].size(); j++)
+                for (int j = 0; j < 15 * nodes_array[i].size(); j++)
                 {
                     int from = nodes_array[i - 1][rnd(nodes_array[i - 1].size())]; //from
                     int to = nodes_array[i][rnd(nodes_array[i].size())];           //to
