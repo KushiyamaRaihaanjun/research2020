@@ -913,7 +913,7 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     //priority_queueのサイズ制限（信頼値測定時）
                     if (mode >= 2)
                     {
-                        if (pq_intermediate[hop_num].size() <= 4 && !FindFromMaltable(i, num_edge.to))
+                        if (pq_intermediate[hop_num].size() <= 5 && !FindFromMaltable(i, num_edge.to))
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
