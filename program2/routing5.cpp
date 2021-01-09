@@ -910,7 +910,18 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     dijkstra_etx(gr, num_edge.to, cs);                 //num_edge.to から宛先までのetxを求めている
                     to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //source(送信元ではない)から宛先へのetx
                     //cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
-                    pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
+                    //priority_queueのサイズ制限（信頼値測定時）
+                    if (mode >= 2)
+                    {
+                        if (pq_intermediate[hop_num].size() <= 4 && !FindFromMaltable(i, num_edge.to))
+                        {
+                            pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
+                        }
+                    }
+                    else
+                    {
+                        pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
+                    }
                 }
                 else
                 {
