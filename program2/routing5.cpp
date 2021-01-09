@@ -1406,6 +1406,7 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
         {
             send_round = 0;             //ラウンドをリセット
             cntint_flush_all(obs_node); //インタラクション数をリセット
+            Init_lambda(obs_node);
         }
         seen.assign(N, false); //seen(訪問配列)をリセット
         Decidepriorityfromsource(g, node, 0, d);
