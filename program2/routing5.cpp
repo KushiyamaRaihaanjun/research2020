@@ -911,21 +911,21 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //source(送信元ではない)から宛先へのetx
                                                                        //cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
                                                                        //priority_queueのサイズ制限（信頼値測定時）
-                    pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
+                    //pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                     if (mode == 0)
                     {
                         pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                     }
                     else if (mode == 1)
                     {
-                        if (pq_intermediate[hop_num].size() <= 4)
+                        if (pq_intermediate[hop_num].size() <= 5)
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
                     }
                     else
                     {
-                        if (pq_intermediate[hop_num].size() <= 4 && !FindFromMaltable(i, num_edge.to))
+                        if (pq_intermediate[hop_num].size() <= 5 && !FindFromMaltable(i, num_edge.to))
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
