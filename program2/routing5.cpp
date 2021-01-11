@@ -914,14 +914,14 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     //pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                     if (mode <= 1)
                     {
-                        if (pq_intermediate[hop_num].size() <= 10)
+                        if (pq_intermediate[hop_num].size() <= 9)
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
                     }
                     else
                     {
-                        if (pq_intermediate[hop_num].size() <= 10 && !FindFromMaltable(i, num_edge.to))
+                        if (pq_intermediate[hop_num].size() <= 9 && !FindFromMaltable(i, num_edge.to))
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
