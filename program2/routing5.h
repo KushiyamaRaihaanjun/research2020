@@ -39,6 +39,7 @@ vector<bool> seen;                                         // 到達可能かど
 vector<bool> checked;                                      // 送信元から1hopノードが送信しているか
 vector<double> cs;                                         //宛先までのetxを求めるための配列
 double eps = 1e-15;                                        //数値誤差
+int line = 0;                                              //PDRのファイル行数
 //エッジ型
 struct Edge
 {

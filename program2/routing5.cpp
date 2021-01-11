@@ -1640,13 +1640,21 @@ void show_pdr(Node node[])
 //結果を書き込んでおく
 void simulate_end(Graph &g, Node node[])
 {
+    int now_line = line; //書き込む前の行数
     WritePDR(node);
-    if (mode >= 2)
+    //行数が増えたら実行
+    if (now_line < line)
     {
-        WriteTopology(g, node);
-        WriteDetect();
+        if (mode >= 2)
+        {
+            WriteTopology(g, node);
+            WriteDetect();
+        }
     }
-    //string result = "xxx.csv";
+    else
+    {
+        return;
+    }
 }
 void WriteTopology(Graph &g, Node node[])
 {
@@ -1678,9 +1686,15 @@ void WritePDR(Node node[])
     //終わり
     //PDRをファイルに書き込む
     ofstream ofs2(t1, ios::app);
-    double recv = count(node[d].recvmap, node[d].recvmap + numberofpackets, true);
-    recv /= (double)(numberofpackets);
-    ofs2 << number_of_malnodes << " " << recv << endl; //悪意ノード数，PDR
+    int recv = count(node[d].recvmap, node[d].recvmap + numberofpackets, true);
+    double pdr = (double)(recv);
+    pdr /= (double)(numberofpackets);
+    //pdrが0でないときのみ書き込む
+    if (recv > 0)
+    {
+        ofs2 << number_of_malnodes << " " << pdr << endl; //悪意ノード数，PDR
+        line++;
+    }
     ofs2.close();
 }
 void WriteDetect()
@@ -1918,16 +1932,18 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
-    int cnt_simulation = 100;
+    int cnt_simulation = 1;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;
-    for (int i = 0; i < cnt_simulation; i++)
+    //pdrが0以上が100回
+    while (line < cnt_simulation) //for (int i = 0; i < cnt_simulation; i++)
     {
         simulate();
     }
     cout << "mode 0 done" << endl;
     //悪意ノードありの場合
+    line = 0; //行数をリセット
     for (int i = 5; i <= 30; i += 5)
     {
         //攻撃ノード数を変化
@@ -1937,10 +1953,11 @@ int main(void)
         for (int j = 1; j <= 3; j++)
         {
             set_simulate_mode(j);
-            for (int k = 0; k < cnt_simulation; k++)
+            while (line < cnt_simulation) //for (int k = 0; k < cnt_simulation; k++)
             {
                 simulate();
             }
+            line = 0; //行数のリセット
             cout << "Done mode " << mode << " numberofmalnodes" << number_of_malnodes << endl;
         }
     }
