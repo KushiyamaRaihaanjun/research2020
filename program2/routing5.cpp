@@ -914,14 +914,14 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     //pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                     if (mode <= 1)
                     {
-                        if (pq_intermediate[hop_num].size() <= 14)
+                        if (pq_intermediate[hop_num].size() <= 12)
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
                     }
                     else
                     {
-                        if (pq_intermediate[hop_num].size() <= 14 && !FindFromMaltable(i, num_edge.to))
+                        if (pq_intermediate[hop_num].size() <= 12 && !FindFromMaltable(i, num_edge.to))
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
@@ -1932,7 +1932,7 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
-    int cnt_simulation = 1;
+    int cnt_simulation = 100;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;
