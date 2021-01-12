@@ -330,11 +330,19 @@ void cntint_flush_prevhop(ONode on[], Graph &gr, int node_num_to)
 void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to) //, const Graph &gr)
 {
     //betaに重み付け
+    int all_interacts = on[node_num_to].alpha[node_num_from][send_round] + on[node_num_to].beta[node_num_from][send_round];
     double all_val = (double)(on[node_num_to].alpha[node_num_from][send_round]) + gm * (double)(on[node_num_to].beta[node_num_from][send_round]);
     //n[node_num].dtv
     //リンクのあるエッジを取得
-    on[node_num_to].dtv[node_num_from] = (double)((double)on[node_num_to].alpha[node_num_from][send_round] / (double)all_val);
-    //ここで返すか返さないか
+    if (all_interacts > 2)
+    {
+        on[node_num_to].dtv[node_num_from] = (double)((double)on[node_num_to].alpha[node_num_from][send_round] / (double)all_val);
+    }
+    else
+    {
+        //インタラクションがない場合は閾値
+        on[node_num_to].dtv[node_num_from] = threshold;
+    } //ここで返すか返さないか
     //return (double)(n[node_num].alpha / all_val);
 }
 
@@ -914,14 +922,14 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     //pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                     if (mode <= 1)
                     {
-                        if (pq_intermediate[hop_num].size() <= 8)
+                        if (pq_intermediate[hop_num].size() <= 9)
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
                     }
                     else
                     {
-                        if (pq_intermediate[hop_num].size() <= 8 && !FindFromMaltable(i, num_edge.to))
+                        if (pq_intermediate[hop_num].size() <= 9 && !FindFromMaltable(i, num_edge.to))
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
