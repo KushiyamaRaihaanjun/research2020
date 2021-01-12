@@ -341,7 +341,7 @@ void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to) //, 
     else
     {
         //インタラクションがない場合は閾値
-        on[node_num_to].dtv[node_num_from] = threshold;
+        on[node_num_to].dtv[node_num_from] = 0.6;
     } //ここで返すか返さないか
     //return (double)(n[node_num].alpha / all_val);
 }
