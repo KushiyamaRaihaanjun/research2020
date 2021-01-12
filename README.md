@@ -542,3 +542,4 @@ Node 3: malicious 5
     - ...exp29:pq=9，dtvをインタラクションがない場合は0.6にセット
         - 少し逆転した
     - ...exp30:packet_step=100にした
+    - ...exp31:packet_step=500,pq=すべて
