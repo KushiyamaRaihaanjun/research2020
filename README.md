@@ -543,3 +543,4 @@ Node 3: malicious 5
         - 少し逆転した
     - ...exp30:packet_step=100にした
     - ...exp31:packet_step=500,pq=すべて
+    - ...exp32:pq=6,edge:15*次ホップ
