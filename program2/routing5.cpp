@@ -880,21 +880,21 @@ void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst)
             dijkstra_etx(gr, num_edge.to, cs);                 //num_edge.to から宛先までのetxを求めている
             to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //sourceから宛先へのetx
                                                                //cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
-            //pq_onehop_fromsource.emplace(to_etx, num_edge.to);
-            if (mode <= 1)
-            {
-                if (pq_onehop_fromsource.size() <= 6)
-                {
-                    pq_onehop_fromsource.emplace(to_etx, num_edge.to);
-                }
-            }
-            else
-            {
-                if (pq_onehop_fromsource.size() <= 6 && !FindFromMaltable(node_num, num_edge.to))
-                {
-                    pq_onehop_fromsource.emplace(to_etx, num_edge.to);
-                }
-            }
+            pq_onehop_fromsource.emplace(to_etx, num_edge.to);
+            //if (mode <= 1)
+            //{
+            //    if (pq_onehop_fromsource.size() <= 9)
+            //    {
+            //        pq_onehop_fromsource.emplace(to_etx, num_edge.to);
+            //    }
+            //}
+            //else
+            //{
+            //    if (pq_onehop_fromsource.size() <= 9 && !FindFromMaltable(node_num, num_edge.to))
+            //    {
+            //        pq_onehop_fromsource.emplace(to_etx, num_edge.to);
+            //    }
+            //}
         }
         else
         {
@@ -1890,7 +1890,7 @@ void edge_set(Graph &gr)
             //loop開始(エッジ数)
             if (i <= mx_hop - 2)
             {
-                for (int j = 0; j < 20 * nodes_array[i].size(); j++)
+                for (int j = 0; j < 15 * nodes_array[i].size(); j++)
                 {
                     int from = nodes_array[i - 1][rnd(nodes_array[i - 1].size())]; //from
                     int to = nodes_array[i][rnd(nodes_array[i].size())];           //to
