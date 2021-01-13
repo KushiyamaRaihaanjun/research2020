@@ -883,14 +883,14 @@ void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst)
             //pq_onehop_fromsource.emplace(to_etx, num_edge.to);
             if (mode <= 1)
             {
-                if (pq_onehop_fromsource.size() <= 9)
+                if (pq_onehop_fromsource.size() <= 6)
                 {
                     pq_onehop_fromsource.emplace(to_etx, num_edge.to);
                 }
             }
             else
             {
-                if (pq_onehop_fromsource.size() <= 9 && !FindFromMaltable(node_num, num_edge.to))
+                if (pq_onehop_fromsource.size() <= 6 && !FindFromMaltable(node_num, num_edge.to))
                 {
                     pq_onehop_fromsource.emplace(to_etx, num_edge.to);
                 }
@@ -936,14 +936,14 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                     //pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                     if (mode <= 1)
                     {
-                        if (pq_intermediate[hop_num].size() <= 9)
+                        if (pq_intermediate[hop_num].size() <= 6)
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
                     }
                     else
                     {
-                        if (pq_intermediate[hop_num].size() <= 9 && !FindFromMaltable(i, num_edge.to))
+                        if (pq_intermediate[hop_num].size() <= 6 && !FindFromMaltable(i, num_edge.to))
                         {
                             pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
                         }
@@ -1890,7 +1890,7 @@ void edge_set(Graph &gr)
             //loop開始(エッジ数)
             if (i <= mx_hop - 2)
             {
-                for (int j = 0; j < 15 * nodes_array[i].size(); j++)
+                for (int j = 0; j < 20 * nodes_array[i].size(); j++)
                 {
                     int from = nodes_array[i - 1][rnd(nodes_array[i - 1].size())]; //from
                     int to = nodes_array[i][rnd(nodes_array[i].size())];           //to
