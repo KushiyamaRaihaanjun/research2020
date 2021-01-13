@@ -543,5 +543,8 @@ Node 3: malicious 5
         - 少し逆転した
     - ...exp30:packet_step=100にした
     - ...exp31:packet_step=500,pq=すべて
-    - ...exp32:pq=6,edge:15*次ホップ
+    - ...exp32:pq=9,edge:15*次ホップ
+- メモ(1/13)
     - ...exp33:exp32と同じ，最終的な信頼値を測定したときのみMalTableに登録
+        - FPの測定方法はOKのはず
+    - ...exp34:exp32と同じ，1hopのpq=9
