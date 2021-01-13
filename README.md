@@ -544,3 +544,4 @@ Node 3: malicious 5
     - ...exp30:packet_step=100にした
     - ...exp31:packet_step=500,pq=すべて
     - ...exp32:pq=6,edge:15*次ホップ
+    - ...exp33:exp32と同じ，最終的な信頼値を測定したときのみMalTableに登録
