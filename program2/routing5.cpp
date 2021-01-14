@@ -420,10 +420,10 @@ void CalTrust_and_Filtering_nb(ONode on[], Graph &gr, int node_num_from)
     {
         caliculate_and_set_dtv(on, node_num_from, node_num.to);
         //dtvで悪意ノードと認識する？
-        //if (on[node_num.to].dtv[node_num_from] + eps <= threshold)
-        //{
-        //    RegistTable(node_num.to, node_num_from);
-        //}
+        if (on[node_num.to].dtv[node_num_from] + eps <= threshold)
+        {
+            RegistTable(node_num.to, node_num_from);
+        }
     }
     for (int i = 0; i < N; i++)
     {
@@ -437,10 +437,10 @@ void CalTrust_and_Filtering_nb(ONode on[], Graph &gr, int node_num_from)
                 caliculate_and_set_dtv(on, i, j);
                 //dtvがしきい値以下の場合
                 //i,jが直接つながっているまたはあるノードの共通の1hopノードである場合//この条件は消した
-                //if (on[j].dtv[i] + eps <= threshold)
-                //{
-                //    RegistTable(j, i);
-                //}
+                if (on[j].dtv[i] + eps <= threshold)
+                {
+                    RegistTable(j, i);
+                }
             }
         }
     }
@@ -478,10 +478,10 @@ void CalTrustWhileSending(ONode on[], Graph &gr, int node_num_to)
             {
                 //i->num_edge.toへの直接的な信頼値の測定
                 caliculate_and_set_dtv(on, i, num_edge.to);
-                //if (on[num_edge.to].dtv[i] + eps <= threshold)
-                //{
-                //    RegistTable(num_edge.to, i);
-                //}
+                if (on[num_edge.to].dtv[i] + eps <= threshold)
+                {
+                    RegistTable(num_edge.to, i);
+                }
             }
             for (int j = 0; j < N; j++)
             {
@@ -492,10 +492,10 @@ void CalTrustWhileSending(ONode on[], Graph &gr, int node_num_to)
                 {
                     caliculate_and_set_dtv(on, j, node_num_to);
                     //dtvがしきい値以下の場合
-                    //if (on[node_num_to].dtv[j] + eps <= threshold)
-                    //{
-                    //    RegistTable(node_num_to, j);
-                    //}
+                    if (on[node_num_to].dtv[j] + eps <= threshold)
+                    {
+                        RegistTable(node_num_to, j);
+                    }
                 }
             }
             //間接的なノード信頼値の計算
