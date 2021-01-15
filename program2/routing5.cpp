@@ -393,7 +393,7 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
                 caliculate_and_set_dtv(on, i, j);
                 //dtvがしきい値以下の場合
                 //i,jが直接つながっているまたはあるノードの共通の1hopノードである場合
-                if (on[j].dtv[i] <= threshold && IsOneHopNeighbor(gr, i, j) == true)
+                if (on[j].dtv[i] + eps <= threshold && IsOneHopNeighbor(gr, i, j) == true)
                 {
                     RegistTable(j, i);
                 }
@@ -403,7 +403,7 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
 
     for (int i = 0; i < N; i++)
     {
-        for (int j = i + 1; j < N; j++)
+        for (int j = 0; j < N; j++)
         {
             //間接的なノード信頼値の計算
             //d-sでエラー出そう
@@ -414,11 +414,11 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
                 caliculate_indirect_trust_value(on, gr, i, j);
                 //最終的な信頼値測定
                 double tv = cal_get_trust_value(on, i, j);
-                if (tv <= threshold) //信頼値が閾値以下の場合
+                if (tv + eps <= threshold) //信頼値が閾値以下の場合
                 {
                     //constを変更しようとしている
-                    //RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
-                    RegistTable(j, i); //まだ登録されていない場合テーブルに登録する
+                    RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
+                    RegistTable(j, i);         //まだ登録されていない場合テーブルに登録する
                 }
             }
         }
@@ -847,7 +847,7 @@ bool IsOneHopNeighbor(Graph &gr, int node_num1, int node_num2)
 {
     for (int i = 0; i < N; i++)
     {
-        if (IsLinked(gr, i, node_num1) && IsLinked(gr, i, node_num2))
+        if (node_num1 != node_num2 && IsLinked(gr, i, node_num1) && IsLinked(gr, i, node_num2))
         {
             return true;
         }
@@ -1444,6 +1444,8 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
             DecidePriorityIntermediate(g, node, i, d);
         }
         BroadcastFromIntermediatenode(g, node, obs_node);
+        ///ここで測定？
+        ///
         packet_total_num += packet_step_send;
         CleanPriorityQueue(); //優先度キューのリセット
     }
