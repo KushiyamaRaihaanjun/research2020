@@ -41,10 +41,10 @@ vector<double> cs;                                         //宛先までのetx�
 double eps = 1e-15;                                        //数値誤差
 int line = 0;                                              //PDRのファイル行数
 //損失率調査用
-lli pdrop_black = 0; //ブラックホール攻撃を原因とする破棄をカウント
-lli pdrop_dup = 0;   //転送優先度によるパケット破棄
-lli pdrop_fal = 0;   //転送失敗,重複によるパケット破棄
-
+lli pdrop_black = 0;   //ブラックホール攻撃を原因とする破棄をカウント
+lli pdrop_dup = 0;     //転送優先度によるパケット破棄
+lli pdrop_fal = 0;     //転送失敗,重複によるパケット破棄
+lli pdrop_noroute = 0; //経路なしによるパケット破棄
 //エッジ型
 struct Edge
 {
@@ -183,7 +183,8 @@ void CntSuc(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_sen
 void CntFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
 void DecFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
 void DecFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_send);
-void DropCount(int ev_val); //ev_val...攻撃=0,重複=1,失敗=2
+void DropCount(int ev_val); //ev_val...攻撃=0,重複=1,失敗=2,経路なし=3
+void NorouteCount();        //経路なしのパケット数をカウントする
 void cntint_flush(ONode on[], int node_num_from, int node_num_to);
 void cntint_flush_all(ONode on[]);
 void cntint_flush_nb(ONode on[], Graph &gr, int node_num_from);

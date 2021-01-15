@@ -260,9 +260,23 @@ void DropCount(int ev_val)
     {
         pdrop_dup += 1;
     }
-    else
+    else if (ev_val == 2)
     {
         pdrop_fal += 1;
+    }
+    else if (ev_val == 3)
+    {
+        pdrop_noroute += 1;
+    }
+}
+void NorouteCount(Node n[])
+{
+    for (int i = 1; i < N - 1; i++)
+    {
+        if (!n[i].q.empty())
+        {
+            pdrop_noroute += n[i].q.size();
+        }
     }
 }
 //インタラクション数をリセット
@@ -818,6 +832,7 @@ void Resetdrop()
     pdrop_black = 0;
     pdrop_dup = 0;
     pdrop_fal = 0;
+    pdrop_noroute = 0;
 }
 
 //ホップ数を調べる
@@ -1783,7 +1798,7 @@ void WriteDetect()
 void Writeloss()
 {
     //パケット破棄（合計）
-    lli loss_all = pdrop_black + pdrop_dup + pdrop_fal;
+    lli loss_all = pdrop_black + pdrop_dup + pdrop_fal + pdrop_noroute;
     string t = "LOSS-";
     t += to_string(mode);
     t += "-";
@@ -1792,9 +1807,10 @@ void Writeloss()
     double rate_black = (double)((double)pdrop_black / (double)loss_all);
     double rate_dup = (double)((double)pdrop_dup / (double)loss_all);
     double rate_fal = (double)((double)pdrop_fal / (double)loss_all);
+    double rate_noroute = (double)((double)pdrop_noroute / (double)loss_all);
     //ファイル書き込み
     ofstream ofs(t, ios::app);
-    ofs << number_of_malnodes << " " << rate_black << " " << rate_dup << " " << rate_fal << endl;
+    ofs << number_of_malnodes << " " << rate_black << " " << rate_dup << " " << rate_fal << " " << rate_noroute << endl;
     ofs.close();
 }
 void edge_set_from_file(Graph &gr)
