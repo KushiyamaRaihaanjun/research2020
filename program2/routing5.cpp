@@ -250,7 +250,21 @@ void DecFal(Graph &gr, Node n[], ONode on[], int node_num_recv, int node_num_sen
         cnt_inter(on, edge.to, node_num_recv, 2);
     }
 }
-
+void DropCount(int ev_val)
+{
+    if (ev_val == 0)
+    {
+        pdrop_black += 1;
+    }
+    else if (ev_val == 1)
+    {
+        pdrop_dup += 1;
+    }
+    else
+    {
+        pdrop_fal += 1;
+    }
+}
 //インタラクション数をリセット
 //最初にかならず呼び，ラウンドの更新ごとにも呼ぶ
 //node_num_from...観察するノード
@@ -639,6 +653,7 @@ void BlackholeAttack(Node node[], int node_num)
     if (!node[node_num].q.empty() && IsRegisteredAt(node_num) == true)
     {
         node[node_num].q.pop();
+        DropCount(0);
     }
 }
 
@@ -798,6 +813,12 @@ void CleanPriorityQueue()
         }
     }
 }
+void Resetdrop()
+{
+    pdrop_black = 0;
+    pdrop_dup = 0;
+    pdrop_fal = 0;
+}
 
 //ホップ数を調べる
 int GetMaxHop()
@@ -881,20 +902,6 @@ void Decidepriorityfromsource(const Graph &gr, Node n[], int node_num, int dst)
             to_etx = (1.0 / num_edge.tsuccess_rate) + cs[dst]; //sourceから宛先へのetx
                                                                //cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
             pq_onehop_fromsource.emplace(to_etx, num_edge.to);
-            //if (mode <= 1)
-            //{
-            //    if (pq_onehop_fromsource.size() <= 8)
-            //    {
-            //        pq_onehop_fromsource.emplace(to_etx, num_edge.to);
-            //    }
-            //}
-            //else
-            //{
-            //    if (pq_onehop_fromsource.size() <= 12 && !FindFromMaltable(node_num, num_edge.to))
-            //    {
-            //        pq_onehop_fromsource.emplace(to_etx, num_edge.to);
-            //    }
-            //}
         }
         else
         {
@@ -934,20 +941,6 @@ void DecidePriorityIntermediate(const Graph &gr, Node n[], int hop_num, int dst)
                                                                        //cout << "Node " << num_edge.to << " :ETX = " << to_etx << endl;
                                                                        //priority_queueのサイズ制限（信頼値測定時）
                     pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
-                    //if (mode <= 1)
-                    //{
-                    //    if (pq_intermediate[hop_num].size() <= 8)
-                    //    {
-                    //        pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
-                    //    }
-                    //}
-                    //else
-                    //{
-                    //    if (pq_intermediate[hop_num].size() <= 12 && !FindFromMaltable(i, num_edge.to))
-                    //    {
-                    //        pq_intermediate[hop_num].emplace(to_etx, num_edge.to);
-                    //    }
-                    //}
                 }
                 else
                 {
@@ -994,6 +987,7 @@ void BroadcastFromSource(Graph &gr, Node n[], ONode on[], int node_num, int p, i
                 //n[num_edge.to].recvmap[p] = false; //
                 WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, p);
                 //cout << "Node " << num_edge.to << " dropped packet " << p << " ((from  Node " << node_num << endl;
+                DropCount(2); //送信失敗/受信失敗の分
             }
             ////cout << num_edge.to << " ";
         }
@@ -1045,6 +1039,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
                     //sendmapを失敗に変える
                     WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
                     WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+                    DropCount(2); //送信・受信失敗の分
                     //to do
                     //エッジを調べる
                     //失敗をnode_numに通知
@@ -1059,6 +1054,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
                 {
                     WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
                 }
+                DropCount(2); //すでに受信しているパケットを破棄した分
             }
         } //すでに優先度の高いノードが送信している場合
         else
@@ -1071,6 +1067,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
                 WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
                 //WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
             }
+            DropCount(1); //重複を避けた分
         }
         //que.pop();
         tmp2_pq_onehop_fromsource.pop(); //パケットについての処理終なのでノード番号を更新する
@@ -1118,6 +1115,7 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
                 WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
                 //WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
             }
+            DropCount(2);
         }
         //que.pop();
         //to do
@@ -1131,6 +1129,8 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
         WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
         //受信失敗時処理をRecvpacketFalに移動
         WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+        //失敗をカウント
+        DropCount(2);
         //que.pop();
         //to do
         //エッジを調べる
@@ -1406,6 +1406,7 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     bfs(g);                      //幅優先探索によりホップ数計算
     int packet_step_send = 1000; //パケットのstep数(packet_stepと同名にしない)
     int packet_total_num = 0;    //パケットのカウンター
+    Resetdrop();                 //損失率を求める際に用いるカウントをリセット
     if (mode >= 2)               //測定あり
     {
         array_ONodeinit(obs_node); //ONodeのdtv配列をリセットする
@@ -1667,6 +1668,7 @@ void simulate_end(Graph &g, Node node[])
     //行数が増えたら実行
     if (now_line < line)
     {
+        Writeloss();
         if (mode >= 2)
         {
             WriteTopology(g, node);
@@ -1776,7 +1778,23 @@ void WriteDetect()
     ofs4 << number_of_malnodes << " " << fp_rate << endl;
     ofs4.close();
 }
-
+void Writeloss()
+{
+    //パケット破棄（合計）
+    lli loss_all = pdrop_black + pdrop_dup + pdrop_fal;
+    string t = "LOSS-";
+    t += to_string(mode);
+    t += "-";
+    t += to_string(number_of_malnodes);
+    t += ".txt";
+    double rate_black = (double)((double)pdrop_black / (double)loss_all);
+    double rate_dup = (double)((double)pdrop_dup / (double)loss_all);
+    double rate_fal = (double)((double)pdrop_fal / (double)loss_all);
+    //ファイル書き込み
+    ofstream ofs(t, ios::app);
+    ofs << number_of_malnodes << " " << rate_black << " " << rate_dup << " " << rate_fal << endl;
+    ofs.close();
+}
 void edge_set_from_file(Graph &gr)
 {
     //ファイルから読み込む形に変更する
@@ -1954,7 +1972,7 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
-    int cnt_simulation = 100;
+    int cnt_simulation = 1;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;
