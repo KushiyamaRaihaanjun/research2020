@@ -580,3 +580,4 @@ Node 3: malicious 5
     - CalTrust_Filteringを復活させてやってみる
         - 本来のやり方ならこっちが正しい
         - できなかったら戻す
+    - routing6.cpp,h...正しいと思われるほうのやり方をコピーしておいた
