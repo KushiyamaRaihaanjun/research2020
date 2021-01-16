@@ -1070,7 +1070,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
                 {
                     WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
                 }
-                DropCount(2); //すでに受信しているパケットを破棄した分
+                DropCount(1); //すでに受信しているパケットを破棄した分
             }
         } //すでに優先度の高いノードが送信している場合
         else
@@ -1928,7 +1928,7 @@ void edge_set(Graph &gr)
             //loop開始(エッジ数)
             if (i <= mx_hop - 2)
             {
-                for (int j = 0; j < 8 * nodes_array[i].size(); j++)
+                for (int j = 0; j < 6 * nodes_array[i].size(); j++)
                 {
                     int from = nodes_array[i - 1][rnd(nodes_array[i - 1].size())]; //from
                     int to = nodes_array[i][rnd(nodes_array[i].size())];           //to
@@ -1992,7 +1992,7 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
-    int cnt_simulation = 1;
+    int cnt_simulation = 100;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;
