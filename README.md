@@ -583,3 +583,4 @@ Node 3: malicious 5
     - routing6.cpp,h...正しいと思われるほうのやり方をコピーしておいた
     - norouteの追加
     - exp40...lossを取ってみる
+    - norouteが多い
