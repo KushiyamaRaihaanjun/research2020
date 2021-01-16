@@ -1063,6 +1063,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
             }
             else //重複を避けるためパケットをドロップ
             {
+                //冗長かもしれない
                 //cout << "Node " << node_num << " Drop packet " << packet_num << " to prevent duplicate (to Node" << num_edge.to << endl;
                 WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
                 if (mode == 3) //提案手法あり
@@ -1123,14 +1124,14 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
             //重複時のメッセージ
             //cout << "Node " << num_edge.to << " ignoring packet " << packet_num << " due to duplicate" << endl;
             //SendFromlessに書く
-            WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
-            //WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
-            if (mode == 3) //提案手法あり
-            {
-                WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
-                //WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
-            }
-            DropCount(2);
+            //WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+            ////WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+            //if (mode == 3) //提案手法あり
+            //{
+            //    WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+            //    //WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+            //}
+            //DropCount(2);
         }
         //que.pop();
         //to do
@@ -1991,7 +1992,7 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
-    int cnt_simulation = 100;
+    int cnt_simulation = 1;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;
