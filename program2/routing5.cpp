@@ -1680,6 +1680,7 @@ void show_pdr(Node node[])
 //結果を書き込んでおく
 void simulate_end(Graph &g, Node node[])
 {
+    NorouteCount(node);
     int now_line = line; //書き込む前の行数
     WritePDR(node);
     //行数が増えたら実行
