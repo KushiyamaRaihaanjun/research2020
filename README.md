@@ -593,3 +593,6 @@ Node 3: malicious 5
     - edge->6,重複を優先度に起因するものとした...注意(exp42)
     - edge->4,優先度キューのループで間違っていそうな部分をなおした(exp43)
         - 間違っていたら元に戻す
+    - exp44...packet_step_sendを5000に変更（信頼値測定がされていない恐れがあるため）
+    - exp45...packet_step_send=5000,edge=8*次ホップ
+    - exp46...packet_step_send=5000,edge=10*次ホップ
