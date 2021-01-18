@@ -1296,7 +1296,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             int node_num = pq_onehop_fromsource.top().second; //ノード番号(優先度順)
             send_round = 0;                                   //送信ラウンドのリセット
             cntint_flush_nb(on, gr, node_num);
-            //cntint_flush_prevhop(on, gr, node_num);
+            cntint_flush_prevhop(on, gr, node_num);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             //cout << "Node " << node_num << " priority " << pq_onehop_fromsource.size() << endl;
@@ -1378,7 +1378,7 @@ void BroadcastFromIntermediatenode(Graph &gr, Node n[], ONode on[])
             int node_num_sev = pq_intermediate[i].top().second; //ノード番号を取得
             send_round = 0;                                     //送信ラウンドのリセット
             cntint_flush_nb(on, gr, node_num_sev);
-            //cntint_flush_prevhop(on, gr, node_num_sev);
+            cntint_flush_prevhop(on, gr, node_num_sev);
             //優先度を表示
             //数字(size)が大きいほど高い優先度
             //cout << "Node " << node_num_sev << " priority " << pq_intermediate[i].size() << endl;
@@ -1420,7 +1420,7 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
     //パケットはuID指定
     set_map(node);
     bfs(g);                      //幅優先探索によりホップ数計算
-    int packet_step_send = 1000; //パケットのstep数(packet_stepと同名にしない)
+    int packet_step_send = 2000; //パケットのstep数(packet_stepと同名にしない)
     int packet_total_num = 0;    //パケットのカウンター
     Resetdrop();                 //損失率を求める際に用いるカウントをリセット
     if (mode >= 2)               //測定あり
@@ -1992,7 +1992,7 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
-    int cnt_simulation = 100;
+    int cnt_simulation = 1;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;

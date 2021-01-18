@@ -260,9 +260,23 @@ void DropCount(int ev_val)
     {
         pdrop_dup += 1;
     }
-    else
+    else if (ev_val == 2)
     {
         pdrop_fal += 1;
+    }
+    else if (ev_val == 3)
+    {
+        pdrop_noroute += 1;
+    }
+}
+void NorouteCount(Node n[])
+{
+    for (int i = 1; i < N - 1; i++)
+    {
+        if (!n[i].q.empty())
+        {
+            pdrop_noroute += n[i].q.size();
+        }
     }
 }
 //インタラクション数をリセット
@@ -348,15 +362,15 @@ void caliculate_and_set_dtv(ONode on[], int node_num_from, int node_num_to) //, 
     double all_val = (double)(on[node_num_to].alpha[node_num_from][send_round]) + gm * (double)(on[node_num_to].beta[node_num_from][send_round]);
     //n[node_num].dtv
     //リンクのあるエッジを取得
-    if (all_interacts > 2)
-    {
-        on[node_num_to].dtv[node_num_from] = (double)((double)on[node_num_to].alpha[node_num_from][send_round] / (double)all_val);
-    }
-    else
-    {
-        //インタラクションがない場合は閾値より少し高めの値
-        on[node_num_to].dtv[node_num_from] = 0.6;
-    } //ここで返すか返さないか
+    //if (all_interacts > 2)
+    //{
+    on[node_num_to].dtv[node_num_from] = (double)((double)on[node_num_to].alpha[node_num_from][send_round] / (double)all_val);
+    //}
+    //else
+    //{
+    //    //インタラクションがない場合は閾値より少し高めの値
+    //    on[node_num_to].dtv[node_num_from] = 0.6;
+    //} //ここで返すか返さないか
     //return (double)(n[node_num].alpha / all_val);
 }
 
@@ -387,13 +401,13 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
     {
         for (int j = 0; j < N; j++)
         {
-            if (i != j)
+            if (i != j && IsOneHopNeighbor(gr, i, j) == true)
             {
                 //直接的なノード信頼値の計算
                 caliculate_and_set_dtv(on, i, j);
                 //dtvがしきい値以下の場合
                 //i,jが直接つながっているまたはあるノードの共通の1hopノードである場合
-                //if (on[j].dtv[i] + eps <= threshold && IsOneHopNeighbor(gr, i, j) == true)
+                //if (on[j].dtv[i] + eps <= threshold)
                 //{
                 //    RegistTable(j, i);
                 //}
@@ -403,23 +417,21 @@ void CalTrust_and_Filtering(ONode on[], Graph &gr)
 
     for (int i = 0; i < N; i++)
     {
-        for (int j = 0; j < N; j++)
+        //for (int j = 0; j < N; j++)
+        for (auto num_edge : gr[i])
         {
             //間接的なノード信頼値の計算
             //d-sでエラー出そう
             //i-j間で直接(1ホップの)リンクがあるかを判定する
-            if (i != j && IsLinked(gr, i, j) == true)
+            //itv測定
+            caliculate_indirect_trust_value(on, gr, i, num_edge.to);
+            //最終的な信頼値測定
+            double tv = cal_get_trust_value(on, i, num_edge.to);
+            if (tv + eps <= threshold) //信頼値が閾値以下の場合
             {
-                //itv測定
-                caliculate_indirect_trust_value(on, gr, i, j);
-                //最終的な信頼値測定
-                double tv = cal_get_trust_value(on, i, j);
-                if (tv + eps <= threshold) //信頼値が閾値以下の場合
-                {
-                    //constを変更しようとしている
-                    RemoveEdgeToMal(gr, j, i); //悪意のあるノードのエッジを取り除く
-                    RegistTable(j, i);         //まだ登録されていない場合テーブルに登録する
-                }
+                //constを変更しようとしている
+                RemoveEdgeToMal(gr, num_edge.to, i); //悪意のあるノードのエッジを取り除く
+                RegistTable(num_edge.to, i);         //まだ登録されていない場合テーブルに登録する
             }
         }
     }
@@ -818,6 +830,7 @@ void Resetdrop()
     pdrop_black = 0;
     pdrop_dup = 0;
     pdrop_fal = 0;
+    pdrop_noroute = 0;
 }
 
 //ホップ数を調べる
@@ -1054,7 +1067,7 @@ void SendFromlessPrior(Graph &gr, Node n[], ONode on[], priority_queue<P, vector
                 {
                     WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
                 }
-                DropCount(2); //すでに受信しているパケットを破棄した分
+                DropCount(1); //すでに受信しているパケットを破棄した分
             }
         } //すでに優先度の高いノードが送信している場合
         else
@@ -1108,14 +1121,14 @@ void SendFromHighestPrior(Graph &gr, Node n[], ONode on[], int node_num, Edge nu
             //重複時のメッセージ
             //cout << "Node " << num_edge.to << " ignoring packet " << packet_num << " due to duplicate" << endl;
             //SendFromlessに書く
-            WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
-            //WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
-            if (mode == 3) //提案手法あり
-            {
-                WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
-                //WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
-            }
-            DropCount(2);
+            //WhenSendPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+            ////WhenRecvPacketFal(gr, n, on, num_edge.to, node_num, packet_num);
+            //if (mode == 3) //提案手法あり
+            //{
+            //    WhenSendPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+            //    //WhenRecvPacketDup(gr, n, on, num_edge.to, node_num, packet_num);
+            //}
+            //DropCount(2);
         }
         //que.pop();
         //to do
@@ -1432,7 +1445,13 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
             cntint_flush_all(obs_node); //インタラクション数をリセット
             //Init_lambda(obs_node);
         }
-        seen.assign(N, false); //seen(訪問配列)をリセット
+        seen.assign(N, false);  //seen(訪問配列)をリセット
+        bf_dist.assign(N, -1);  //bfsをやり直す
+        while (!bf_que.empty()) //bfsのキューをポップ
+        {
+            bf_que.pop();
+        }
+        bfs(g);
         Decidepriorityfromsource(g, node, 0, d);
         //packet_step_send個送信
         for (int i = packet_total_num; i < packet_total_num + packet_step_send; i++)
@@ -1459,8 +1478,8 @@ void OpportunisticRouting4(Graph &g, Node node[], ONode obs_node[])
         packet_total_num += packet_step_send;
         CleanPriorityQueue(); //優先度キューのリセット
     }
-    show_map(node);
-    show_pdr(node);
+    //show_map(node);
+    //show_pdr(node);
     if (mode >= 2)
     {
         get_detect_rate();
@@ -1675,6 +1694,7 @@ void show_pdr(Node node[])
 //結果を書き込んでおく
 void simulate_end(Graph &g, Node node[])
 {
+    NorouteCount(node);
     int now_line = line; //書き込む前の行数
     WritePDR(node);
     //行数が増えたら実行
@@ -1793,7 +1813,7 @@ void WriteDetect()
 void Writeloss()
 {
     //パケット破棄（合計）
-    lli loss_all = pdrop_black + pdrop_dup + pdrop_fal;
+    lli loss_all = pdrop_black + pdrop_dup + pdrop_fal + pdrop_noroute;
     string t = "LOSS-";
     t += to_string(mode);
     t += "-";
@@ -1802,9 +1822,10 @@ void Writeloss()
     double rate_black = (double)((double)pdrop_black / (double)loss_all);
     double rate_dup = (double)((double)pdrop_dup / (double)loss_all);
     double rate_fal = (double)((double)pdrop_fal / (double)loss_all);
+    double rate_noroute = (double)((double)pdrop_noroute / (double)loss_all);
     //ファイル書き込み
     ofstream ofs(t, ios::app);
-    ofs << number_of_malnodes << " " << rate_black << " " << rate_dup << " " << rate_fal << endl;
+    ofs << number_of_malnodes << " " << rate_black << " " << rate_dup << " " << rate_fal << " " << rate_noroute << endl;
     ofs.close();
 }
 void edge_set_from_file(Graph &gr)
@@ -1920,7 +1941,7 @@ void edge_set(Graph &gr)
             //loop開始(エッジ数)
             if (i <= mx_hop - 2)
             {
-                for (int j = 0; j < 8 * nodes_array[i].size(); j++)
+                for (int j = 0; j < 6 * nodes_array[i].size(); j++)
                 {
                     int from = nodes_array[i - 1][rnd(nodes_array[i - 1].size())]; //from
                     int to = nodes_array[i][rnd(nodes_array[i].size())];           //to
@@ -1984,7 +2005,7 @@ int main(void)
     //2...攻撃・信頼値測定あり
     //3...提案手法
     //ifstream ifs("simulate.txt", ios::in);
-    int cnt_simulation = 1;
+    int cnt_simulation = 100;
     //悪意ノードなしの場合
     set_simulate_mode(0);
     number_of_malnodes = 1;
