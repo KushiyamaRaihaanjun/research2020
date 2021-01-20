@@ -601,4 +601,5 @@ Node 3: malicious 5
     - exp49...routing6で実験
     - exp50...packet_step_send=5000,<-採用するかも
     - exp51...packet_step_send=1000,<-ひとまず採用
-    - exp52...packet_step_send=500<-
+    - exp52...packet_step_send=500<-改善
+    - exp53...packet_step_send=250<-
