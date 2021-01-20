@@ -596,3 +596,9 @@ Node 3: malicious 5
     - exp44...packet_step_sendを5000に変更（信頼値測定がされていない恐れがあるため）
     - exp45...packet_step_send=5000,edge=8*次ホップ
     - exp46...packet_step_send=5000,edge=10*次ホップ
+    - exp47...packet_step_send=2000,edge=6*次ホップ
+    - exp48...packet_step_send=2000,edge=6*次ホップ,cntint_prevhopを追加
+    - exp49...routing6で実験
+    - exp50...packet_step_send=5000,<-採用するかも
+    - exp51...packet_step_send=1000,<-ひとまず採用
+    - exp52...packet_step_send=500<-
