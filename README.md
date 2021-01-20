@@ -603,3 +603,4 @@ Node 3: malicious 5
     - exp51...packet_step_send=1000,<-ひとまず採用
     - exp52...packet_step_send=500<-改善
     - exp53...packet_step_send=250<-
+    - exp54...packet_step_send=100<-
