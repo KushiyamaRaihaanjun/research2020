@@ -1819,14 +1819,20 @@ void Writeloss()
     t += "-";
     t += to_string(number_of_malnodes);
     t += ".txt";
+    //パケット破棄(絶対数)
+    string t2 = "ABS" + t;
+    ofstream ofs1(t2, ios::app);
+    ofs1 << number_of_malnodes << " " << pdrop_black << " " << pdrop_dup << " " << pdrop_fal << " " << pdrop_noroute << endl;
+    ofs1.close();
+    ///
     double rate_black = (double)((double)pdrop_black / (double)loss_all);
     double rate_dup = (double)((double)pdrop_dup / (double)loss_all);
     double rate_fal = (double)((double)pdrop_fal / (double)loss_all);
     double rate_noroute = (double)((double)pdrop_noroute / (double)loss_all);
     //ファイル書き込み
-    ofstream ofs(t, ios::app);
-    ofs << number_of_malnodes << " " << rate_black << " " << rate_dup << " " << rate_fal << " " << rate_noroute << endl;
-    ofs.close();
+    ofstream ofs2(t, ios::app);
+    ofs2 << number_of_malnodes << " " << rate_black << " " << rate_dup << " " << rate_fal << " " << rate_noroute << endl;
+    ofs2.close();
 }
 void edge_set_from_file(Graph &gr)
 {
