@@ -613,4 +613,4 @@ Node 3: malicious 5
     - exp59...packet_step_send = 500,データ取り直し(済)
     - exp60...packet_step_send = 1000,データ取り直し(済)
     - exp61...packet_step_send = 2000,データ取り直し(済)
-    - exp62...packet_step_send = 5000,データ取り直し
+    - exp62...packet_step_send = 5000,データ取り直し(済)
