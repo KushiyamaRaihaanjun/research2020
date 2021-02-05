@@ -797,7 +797,6 @@ void bfs(const Graph &gr)
             if (bf_dist[nv.to] != -1)
                 continue; // すでに発見済みの頂点は探索しない
 
-            // 新たな白色頂点 nv について距離情報を更新してキューに追加する
             bf_dist[nv.to] = bf_dist[v] + 1;
             bf_que.push(nv.to);
         }
