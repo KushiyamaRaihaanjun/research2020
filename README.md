@@ -615,3 +615,4 @@ Node 3: malicious 5
     - exp61...packet_step_send = 2000,データ取り直し(済)
     - exp62...packet_step_send = 5000,データ取り直し(済)
     - 更新:2/05
+    - 更新:2/05[https://qiita.com/smina2018/items/7e40ced3bfd9a727f384]
